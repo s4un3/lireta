@@ -74,13 +74,13 @@ class AudioWave:
         ans._voicecount = self._voicecount + other._voicecount
         ans._wave = []
 
-        i = 0
-        while i < len(self._wave) or i < len(other._wave):
-            ans._wave.append(
+        ans._wave.extend(
+            [
                 (self._wave[i] if i < len(self._wave) else 0)
                 + (other._wave[i] if i < len(other._wave) else 0)
-            )
-            i += 1
+                for i in range(max(len(self._wave), len(other._wave)))
+            ]
+        )
         return ans
 
     def append(
