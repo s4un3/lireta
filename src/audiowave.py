@@ -121,3 +121,4 @@ class AudioWave:
     def play(self):
         sd.play((self * (1 / self._voicecount))._wave, self._samplerate)
         sd.wait()
+        return self
