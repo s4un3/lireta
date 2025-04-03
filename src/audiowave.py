@@ -91,20 +91,15 @@ class AudioWave:
         ans = AudioWave()
         ans._samplerate = self._samplerate
         ans._voicecount = self._voicecount + other._voicecount
+        ans._wave = []
 
-        v1 = self
-        v2 = other
-
-        if len(self._wave) > len(other._wave):
-            z = [0] * (len(self._wave) - len(other._wave))
-            v1 = self.copy()
-            v1._wave.extend(z)
-        else:
-            z = [0] * (len(other._wave) - len(self._wave))
-            v2 = other.copy()
-            v2._wave.extend(z)
-
-        ans._wave = [v1._wave[i] + v2._wave[i] for i in range(len(v1._wave))]
+        i = 0
+        while i < len(self._wave) or i < len(other._wave):
+            ans._wave.append(
+                (self._wave[i] if i < len(self._wave) else 0)
+                + (other._wave[i] if i < len(other._wave) else 0)
+            )
+            i += 1
         return ans
 
     def append(
@@ -114,8 +109,8 @@ class AudioWave:
             raise ValueError(
                 "Samplerates of both audios must be equal in order to add."
             )
-
-        self._wave.extend(other._wave)
+        self.scale(1 / self._voicecount)
+        self._wave.extend([i / other._voicecount for i in other._wave])
         self._voicecount = newvoicecount(self._voicecount, other._voicecount)
 
     def __gt__(self, other):
