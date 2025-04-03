@@ -88,7 +88,7 @@ class AudioWave:
     ):
         if self._samplerate != other._samplerate:
             raise ValueError(
-                "Samplerates of both audios must be equal in order to add."
+                "Samplerates of both audios must be equal in order to append."
             )
         self.scale(1 / self._voicecount)
         self._wave.extend([i / other._voicecount for i in other._wave])
