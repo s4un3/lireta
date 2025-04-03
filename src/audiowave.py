@@ -112,6 +112,4 @@ class AudioWave:
         aux = self * (1 / self._voicecount)
         scaled_wave = np.int16(np.array(aux._wave) * 32767)  # scale to 16-bit PCM
         wavfile.write(filename, aux._samplerate, scaled_wave)
-
-        # in case you want to export it directly after creating
         return self
