@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "lireta"
+version = "0.1.0"
+description = "A project to render simple music"
+authors = ["Pedro H. Sauné <pedrohsaune@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
