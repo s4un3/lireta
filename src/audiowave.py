@@ -6,26 +6,6 @@ Num = Union[float, int]
 FuncOrNum = Union[Num, Callable[[Num], Num]]
 
 
-class WaveParameter:
-    def __init__(self, value: FuncOrNum):
-        if (
-            not isinstance(value, float)
-            and not isinstance(value, int)
-            and not callable(value)
-        ):
-            raise TypeError("'value' does not have a compatible type.")
-        self._val = value
-
-    def __call__(self, arg: Num):
-        if not isinstance(arg, float) and not isinstance(arg, int):
-            raise TypeError("'arg' does not have a compatible type.")
-
-        if callable(self._val):
-            return self._val(arg)
-        else:
-            return self._val
-
-
 class AudioWave:
     def __init__(self):
         self._wave: list[float]
@@ -46,8 +26,9 @@ class AudioWave:
         waveform: Callable[[float], float] = lambda t: np.sin(2 * np.pi * t),
         samplerate: int = 44100,
     ):
-        _frequency = WaveParameter(frequency)
-        _amplitude = WaveParameter(amplitude)
+
+        _amplitude = lambda t: amplitude(t) if callable(amplitude) else amplitude
+
         self._samplerate = samplerate
         self._wave = []
         self._voicecount = 1
@@ -61,7 +42,7 @@ class AudioWave:
             theta = 0
             while t < duration:
                 self._wave.append(_amplitude(t) * waveform(theta))
-                theta += _frequency(t) / samplerate
+                theta += frequency(t) / samplerate
                 t += 1 / samplerate
 
         return self
