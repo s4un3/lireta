@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Callable, Union, Self
 import sounddevice as sd
+import scipy.io.wavfile as wavfile
 
 Num = Union[float, int]
 FuncOrNum = Union[Num, Callable[[Num], Num]]
@@ -102,4 +103,12 @@ class AudioWave:
     def play(self):
         sd.play((self * (1 / self._voicecount))._wave, self._samplerate)
         sd.wait()
+        return self
+
+    def export_wav(self, filename: str):
+        aux = self * (1 / self._voicecount)
+        scaled_wave = np.int16(np.array(aux._wave) * 32767)  # scale to 16-bit PCM
+        wavfile.write(filename, aux._samplerate, scaled_wave)
+
+        # in case you want to export it directly after creating
         return self
