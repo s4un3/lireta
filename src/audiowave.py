@@ -84,6 +84,9 @@ class AudioWave:
         )
         return ans
 
+    def mix(self, other: Self):
+        self = self + other
+
     def append(
         self, other: Self, newvoicecount: Callable[[int, int], int] = lambda _, __: 1
     ):
