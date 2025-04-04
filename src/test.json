@@ -1,0 +1,14 @@
+{
+  "preloads": ["path/to/preload.json"],
+  "scripts": ["path/to/script.py"],
+  "instruments": {
+    "piano": {
+      "tracks": {
+        "path/to/track.wav": 420.69
+      },
+      "settings": {
+        "interpolation": "none"
+      }
+    }
+  }
+}
