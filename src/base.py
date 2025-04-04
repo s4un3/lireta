@@ -1,13 +1,7 @@
-from sys import path
-from os.path import dirname
-
-path.append(dirname(path[0]))
-__package__ = "lireta"
-
-from src.audiowave import Num
-
-from typing import Callable
+from typing import Union, Callable
 import re
+
+Num = Union[float, int]
 
 
 class Keyword:
