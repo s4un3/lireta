@@ -10,6 +10,11 @@ from typing import Callable
 import re
 
 
+class Keyword:
+    name: str
+    fn: Callable
+
+
 class VoiceThings:
     default_octave: int
     tuning: float
