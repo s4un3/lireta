@@ -6,11 +6,9 @@
       "tracks": {
         "path/to/track.wav": 420.69
       },
-      "settings": {
-        "interpolation": "none",
-        "pitchless": false,
-        "continuous": false
-      }
+      "interpolation": "none",
+      "pitchless": false,
+      "continuous": false
     }
   }
 }
