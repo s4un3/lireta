@@ -19,6 +19,14 @@ class AudioWave:
 
         return self
 
+    def _sampleratefix(self, other: Self):
+        if other._voicecount == 0:
+            other._samplerate = self._samplerate
+        elif self._voicecount == 0:
+            self._samplerate = other._samplerate
+        elif self._samplerate != other._samplerate:
+            raise ValueError("Samplerates of both audios must be equal.")
+
     def new(
         self,
         duration: float,
@@ -65,10 +73,8 @@ class AudioWave:
         return ans
 
     def __add__(self, other: Self):
-        if self._samplerate != other._samplerate:
-            raise ValueError(
-                "Samplerates of both audios must be equal in order to add."
-            )
+
+        self._sampleratefix(other)
 
         ans = AudioWave()
         ans._samplerate = self._samplerate
@@ -90,10 +96,8 @@ class AudioWave:
     def append(
         self, other: Self, newvoicecount: Callable[[int, int], int] = lambda _, __: 1
     ):
-        if self._samplerate != other._samplerate:
-            raise ValueError(
-                "Samplerates of both audios must be equal in order to append."
-            )
+        self._sampleratefix(other)
+
         self.scale(1 / self._voicecount)
         self._wave.extend([i / other._voicecount for i in other._wave])
         self._voicecount = newvoicecount(self._voicecount, other._voicecount)
