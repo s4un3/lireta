@@ -8,7 +8,7 @@ def processjson(
     path: str,
     visited_jsons: list[str] = [],
     keywords_collected: list = [],
-    instruments: list = [],
+    instruments: dict = {},
 ):
 
     if not path.endswith(".json"):
@@ -50,8 +50,10 @@ def processjson(
     if "instruments" in data:
         name = os.path.basename(path)[:-5]  # remove the ".json"
         for instrument in data["instruments"]:
-            instruments.append(
-                {f"{name}.{instrument}": data["instruments"][instrument]}
-            )
+            if f"{name}.{instrument}" in instruments:
+                raise ValueError(
+                    f"Instrument named '{name}.{instruments}' already exists. Try renaming the json to change the namespace."
+                )
+            instruments[f"{name}.{instrument}"] = data["instruments"][instrument]
 
     return keywords_collected, instruments
