@@ -23,7 +23,7 @@ def processjson(
 
     if "preloads" in data:
         for preload in data["preloads"]:
-            processjson(preload, visited_jsons, instruments)
+            processjson(preload, visited_jsons, keywords_collected, instruments)
 
     if "scripts" in data:
         for script_path in data["scripts"]:
