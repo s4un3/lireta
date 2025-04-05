@@ -1,4 +1,3 @@
-from enum import Enum
 import scipy.io.wavfile as wavefile
 from numpy import average, ndarray
 from math import log
