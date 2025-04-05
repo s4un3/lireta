@@ -13,6 +13,8 @@ class AudioWave:
         self._samplerate: int
         self._voicecount: int
 
+        self.clear()
+
     def clear(self):
         self._wave = []
         self._voicecount = 0
