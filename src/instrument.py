@@ -32,10 +32,32 @@ class Track:
 
 class Instrument:
     _name: str
+    _tracks: list[Track]
     _pitchless: bool
     _continuous: bool
     _interpolation: str
-    _tracks: list[Track]
+    _freq_effects: Callable[[float, float], float]
+    _amp_effects: Callable[[float, float], float]
+
+    def __init__(
+        self,
+        tracks: list[Track],
+        pitchless: bool = False,
+        continuous: bool = False,
+        interpolation: str = "none",
+        freq_effects: Callable[[float, float], float] = lambda f, _: f,
+        amp_effects: Callable[[float, float], float] = lambda v, _: v,
+    ):
+
+        if pitchless and len(tracks) != 1:
+            raise ValueError("Pitchless instruments must have only one track.")
+
+        self._tracks = tracks
+        self._pitchless = pitchless
+        self._continuous = continuous
+        self._interpolation = interpolation
+        self._freq_effects = freq_effects
+        self._amp_effects = amp_effects
 
     def _fixcontinuous(self, f: Callable[[float], float]) -> Callable[[float], float]:
         track = self._tracks[0]
