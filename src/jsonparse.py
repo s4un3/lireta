@@ -3,6 +3,7 @@ import importlib.util
 import sys
 import os
 from instrument import Track, Instrument
+from base import Keyword
 
 
 def processjson(
@@ -46,7 +47,30 @@ def processjson(
                 raise RuntimeError("Module loader is None. Unable to load module.")
 
             loader.exec_module(usermodule)
-            keywords_collected.extend(usermodule.available_keywords)
+
+            try:
+                available_keywords = usermodule.available_keywords
+            except AttributeError:
+                available_keywords = []
+
+            for keyword in available_keywords:
+                if not issubclass(keyword, Keyword):
+                    raise TypeError(
+                        "All elements of 'available_keywords' must be classes that inherits from Keyword"
+                    )
+                keywords_collected.append(keyword)
+
+            try:
+                available_instruments = usermodule.available_instruments
+            except AttributeError:
+                available_instruments = []
+
+            for instrument in available_instruments:
+                if not issubclass(instrument, Instrument):
+                    raise TypeError(
+                        "All elements of 'available_instruments' must be classes that inherits from Instrument"
+                    )
+                instruments[instrument._name] = instrument
 
     if "instruments" in data:
         name = os.path.basename(path)[:-5]  # remove the ".json"
@@ -64,7 +88,9 @@ def processjson(
             instr_data.pop("tracks")
 
             instr_class = type(f"{name}.{instrument}", (Instrument,), {})
+            instr_class._name = f"{name}.{instrument}"
+            instr_class._fill(**instr_data)
 
-            instruments[f"{name}.{instrument}"] = instr_class(tracks, **instr_data)
+            instruments[instr_class._name] = instr_class
 
     return keywords_collected, instruments
