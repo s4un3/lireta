@@ -35,12 +35,6 @@ class Track:
 
 
 class Instrument:
-    _tracks: list[Track]
-    _pitchless: bool
-    _continuous: bool
-    _interpolation: str
-    _freq_effects: Callable[[float, float], float]
-    _amp_effects: Callable[[float, float], float]
 
     def __init__(
         self,
