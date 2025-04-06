@@ -31,7 +31,6 @@ class Track:
 
 
 class Instrument:
-    _name: str
     _tracks: list[Track]
     _pitchless: bool
     _continuous: bool
