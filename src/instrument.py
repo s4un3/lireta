@@ -39,7 +39,37 @@ class Instrument:
 
     def _fixcontinuous(self, f: Callable[[float], float]) -> Callable[[float], float]:
         track = self._tracks[0]
-        return lambda t: f(t % (track._samplerate * len(track._wave)))
+        aux = track._freq * len(track._wave) / track._samplerate
+        return lambda t: f(t % aux)
+
+    def _none(self, frequency):
+
+        w = min(
+            self._tracks, key=lambda x: abs(_log(frequency) - _log(x._freq))
+        )._as_callable()
+
+        return self._fixcontinuous(w) if self._continuous else w
+
+    def _upper_lower(self, frequency):
+        upper = float("inf")
+        track_upper = None
+        lower = float("inf")
+        track_lower = None
+        for track in self._tracks:
+            if (
+                track._freq > frequency
+                and (_log(track._freq) - _log(frequency)) < upper
+            ):
+                track_upper = track
+                upper = _log(track._freq) - _log(frequency)
+            elif (
+                track._freq <= frequency
+                and (_log(frequency) - _log(track._freq)) < lower
+            ):
+                track_lower = track
+                lower = _log(frequency) - _log(track._freq)
+
+        return track_upper, track_lower
 
     def waveform(self, frequency: float):
 
@@ -50,9 +80,40 @@ class Instrument:
         match self._interpolation:
 
             case "none":
+                return self._none(frequency)
 
-                w = min(
-                    self._tracks, key=lambda x: abs(_log(frequency) - _log(x._freq))
-                )._as_callable()
+            case "lerp":
 
-                return self._fixcontinuous(w) if self._continuous else w
+                if len(self._tracks) == 1:
+                    return self._none(frequency)
+
+                track_upper, track_lower = self._upper_lower(frequency)
+
+                if track_lower is None:
+                    track_lower = track_upper
+
+                if track_upper is None:
+                    track_upper = track_lower
+
+                if track_lower is None or track_upper is None:
+                    raise ValueError("Could not find upper and lower bound for lerp")
+
+                def lerp_function(t: float) -> float:
+
+                    f_lower = track_lower._as_callable()(t)
+                    f_upper = track_upper._as_callable()(t)
+
+                    if track_upper._freq == track_lower._freq:
+                        ratio = 0
+                    else:
+                        ratio = (_log(frequency) - _log(track_lower._freq)) / (
+                            _log(track_upper._freq) - _log(track_lower._freq)
+                        )
+
+                    return f_lower + ratio * (f_upper - f_lower)
+
+                return (
+                    self._fixcontinuous(lerp_function)
+                    if self._continuous
+                    else lerp_function
+                )
