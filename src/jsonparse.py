@@ -63,6 +63,8 @@ def processjson(
 
             instr_data.pop("tracks")
 
-            instruments[f"{name}.{instrument}"] = Instrument(tracks, **instr_data)
+            instr_class = type(f"{name}.{instrument}", (Instrument,), {})
+
+            instruments[f"{name}.{instrument}"] = instr_class(tracks, **instr_data)
 
     return keywords_collected, instruments
