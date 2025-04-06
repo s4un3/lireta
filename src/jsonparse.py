@@ -2,6 +2,7 @@ import json
 import importlib.util
 import sys
 import os
+from instrument import Track, Instrument
 
 
 def processjson(
@@ -54,6 +55,14 @@ def processjson(
                 raise ValueError(
                     f"Instrument named '{name}.{instruments}' already exists. Try renaming the json to change the namespace."
                 )
-            instruments[f"{name}.{instrument}"] = data["instruments"][instrument]
+
+            instr_data: dict = data["instruments"][instrument]
+            tracks = []
+            for track in instr_data["tracks"]:
+                tracks.append(Track(track, instr_data["tracks"][track]))
+
+            instr_data.pop("tracks")
+
+            instruments[f"{name}.{instrument}"] = Instrument(tracks, **instr_data)
 
     return keywords_collected, instruments
