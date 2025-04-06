@@ -9,9 +9,13 @@ def _log(x: float):
 
 
 class Track:
-    def __init__(self, path, freq):
+    def __init__(self, path: str, freq: float):
         if not path.endswith(".wav"):
             raise ValueError("Expected a wav file.")
+
+        if not isinstance(freq, float) and not isinstance(freq, int):
+            raise ValueError("Frequency must be a number")
+
         self._freq = freq
 
         self._samplerate, w = wavefile.read(path)
