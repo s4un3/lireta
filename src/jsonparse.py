@@ -11,6 +11,7 @@ def processjson(
     visited_jsons: list[str] = [],
     keywords_collected: list[type[Keyword]] = [],
     instruments: dict[str, type[Instrument]] = {},
+    # `instruments` have a redundancy since both the key and the field in the element have (or should have) the same value, but it makes coding it more straightforward
 ):
     """Takes a json path entry point and gathers all info available
 
