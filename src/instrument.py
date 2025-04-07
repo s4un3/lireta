@@ -64,8 +64,9 @@ class Instrument:
     _freq_effects: Callable[[float, float], float]
     _amp_effects: Callable[[float, float], float]
 
+    @classmethod
     def _fill(
-        self,
+        cls,
         pitchless: bool = False,
         continuous: bool = False,
         interpolation: str = "none",
@@ -76,11 +77,11 @@ class Instrument:
 
         For instruments defined in json files"""
 
-        self._pitchless = pitchless
-        self._continuous = continuous
-        self._interpolation = interpolation
-        self._freq_effects = freq_effects
-        self._amp_effects = amp_effects
+        cls._pitchless = pitchless
+        cls._continuous = continuous
+        cls._interpolation = interpolation
+        cls._freq_effects = freq_effects
+        cls._amp_effects = amp_effects
 
     def _fixcontinuous(self, f: Callable[[float], float]) -> Callable[[float], float]:
         """Adjusts a callable from a track to loop"""
