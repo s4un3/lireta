@@ -5,11 +5,17 @@ Num = Union[float, int]
 
 
 class Keyword:
+    """Base class for keywords"""
+
     name: str
+    # what string triggers the keyword
+
     fn: Callable
 
 
 class VoiceThings:
+    """Utility class to carry parameters around and convert notes to frequencies"""
+
     default_octave: int
     tuning: float
 
@@ -18,12 +24,14 @@ class VoiceThings:
         self.tuning = tuning
 
     def notetofreq(self, note: str) -> float | None:
-
+        """None is the result of an invalid note, otherwise the result is a float"""
         if note.endswith("Hz"):
             return float(note.rstrip("Hz"))
+        # if the note is a frequency already (marked by the "Hz" ending), just convert to float and return
 
         if note == "_":
             return 0
+        # "_" marks a pause (silence) and the easiest way to do that is to return a frequency of 0
 
         u = re.match(
             r"([A-G])([#b]*)(?:\(([\+-]\d+(?:\.\d+)?)?c\))?([\+-]*)(~?\d+)?"
@@ -37,8 +45,8 @@ class VoiceThings:
             # [#b]*
             # caputres 0 or more "#" or "b" (note that you can mix them)
             # represents the accidentals ("#" for sharp, "b" for flat)
-            # third capturing group
             #
+            # third capturing group
             # ([\+-]\d+(?:\.\d+)?)
             # captures either "+" or "-", followed by a number (obligatory digits, optional single "." and obligatory digits only if "." was used)
             # only captured if it is between "(" and "c)"
@@ -62,19 +70,28 @@ class VoiceThings:
             note,
         )
         if u is None:
+            # no matches
             return None
 
         groups: list[str] = ["" if i is None else i for i in list(u.groups())]
-        computed: list[Num] = [0] * len(groups)  # all in semitones
+
+        # all in semitones
+        # the result of the convertion of each capturing group
+        computed: list[Num] = [0] * len(groups)
+
+        # we won't need any more information from the Match class, and this function goes for a while, so let's delete it
         del u
 
         aux = "(" + groups[2] + "c)" if groups[2] else ""
         reconstruction = f"{groups[0]}{groups[1]}{aux}{groups[3]}{groups[4]}"
 
         if reconstruction != note:
+            # essentially a sanity check because i don't want to debug regex
+            # so the dirty way to do it is to see if a rebuilt string from the capturing groups is the same as what we started with
             return None
 
         if groups[3] and groups[4]:
+            # since it doesn't make sense to have both a relative and an absolute octave setting, it is considered an invalid note
             return None
 
         computed[0] = {
@@ -93,6 +110,7 @@ class VoiceThings:
 
         # lowers 4 octaves to compensate that `tuning` is in respect of the fourth octave
         sum = -48
+
         for i in groups[1]:
             match (i):
                 case "#":
@@ -100,14 +118,13 @@ class VoiceThings:
                 case "b":
                     sum -= 1
                 case _:
-                    raise ValueError(  # sanity check
-                        f"Unexpected accidental '{i}'. Probably a bug in lireta itself, please report."
-                    )
+                    # sanity check
+                    raise ValueError(f"Unexpected accidental '{i}'.")
         computed[1] = sum
 
         computed[2] = float(groups[2]) / 100 if groups[2] else 0
 
-        sum = 0
+        sum = 0  # reusing that variable
         for i in groups[3]:
             match (i):
                 case "+":
@@ -115,9 +132,8 @@ class VoiceThings:
                 case "-":
                     sum -= 12
                 case _:
-                    raise ValueError(  # sanity check
-                        f"Unexpected relative octave modifier '{i}'. Probably a bug in lireta itself, please report."
-                    )
+                    # sanity check
+                    raise ValueError(f"Unexpected relative octave modifier '{i}'.")
         computed[3] = sum
 
         computed[4] = (
@@ -125,7 +141,7 @@ class VoiceThings:
             if groups[4]
             else self.default_octave * 12
         )
-        sum = 0
+        sum = 0  # reusing again
         for i in computed:
             sum += i
 
