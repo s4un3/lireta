@@ -125,7 +125,7 @@ class AudioWave:
         It's implemented for the sake of completion and symmetry with the other operations, like `__mul__` vs `scale`, `append` vs `__gt__`
         """
 
-        self = self + other
+        return (self := self + other)
 
     def append(
         self, other: Self, newvoicecount: Callable[[int, int], int] = lambda _, __: 1
