@@ -1,0 +1,13 @@
+config path/to/config.json
+
+section A {
+    # foo
+    # bar
+    seq A B C D E,
+        F G A B C
+}
+
+voice std.sin {
+	instrument other
+	sfx effect
+}
