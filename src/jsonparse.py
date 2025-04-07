@@ -9,8 +9,8 @@ from base import Keyword
 def processjson(
     path: str,
     visited_jsons: list[str] = [],
-    keywords_collected: list = [],
-    instruments: dict = {},
+    keywords_collected: list[type[Keyword]] = [],
+    instruments: dict[str, type[Instrument]] = {},
 ):
     """Takes a json path entry point and gathers all info available
 
@@ -27,12 +27,16 @@ def processjson(
         data = json.load(file)
 
     if "preloads" in data:
+        if not isinstance(data["preloads"], list):
+            raise TypeError("'preloads' must be a list")
         # other json scripts that should be loaded before this one
         # useful if you are extending an existing config file and don't want to edit it
         for preload in data["preloads"]:
             processjson(preload, visited_jsons, keywords_collected, instruments)
 
     if "scripts" in data:
+        if not isinstance(data["scripts"], list):
+            raise TypeError("'scripts' must be a list")
         # python files that implement custom keywords or instruments
         for script_path in data["scripts"]:
 
