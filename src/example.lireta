@@ -1,18 +1,14 @@
 config "path/to/config.json";
-section A {
+var A = {
     # foo
     # bar
     seq A B C D E
         F G A B C;
-    "A string";
 };
-voice std.sin {
-	instrument other;
+simult {
+    instrument std.sin;
 	sfx effect;
-
 	if thing {
-	   /* some stuff
-		that might be relevant
-		or might not*/
+	   repeat {var A;} 200;
 	};
 };
