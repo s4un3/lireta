@@ -1,0 +1,6 @@
+simult {
+	instr = std.sin;
+	seq {gliss A B;} {note G; note F;};
+}{
+	note A++;
+};
