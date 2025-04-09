@@ -4,8 +4,8 @@ section A {
     # bar
     seq A B C D E
         F G A B C;
-}
-
+    "A string";
+};
 voice std.sin {
 	instrument other;
 	sfx effect;
@@ -14,5 +14,5 @@ voice std.sin {
 	   /* some stuff
 		that might be relevant
 		or might not*/
-	}
-}
+	};
+};

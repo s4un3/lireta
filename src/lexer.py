@@ -34,12 +34,8 @@ def lex(path: str) -> tuple[list, str]:
                         continue
 
                     if char == "}":
-                        if word:
-                            line.append(word)
-                            word = ""
-                        if line:
-                            processed.append(line)
-                            line = []
+                        if word or line:
+                            raise RuntimeError("Line didn't end before block end")
                         return (processed, i, config)
 
                     if char == "{":
@@ -47,23 +43,27 @@ def lex(path: str) -> tuple[list, str]:
                             line.append(word)
                             word = ""
                         u, j, c = _preprocess(s[i:])
-                        line.append(u)
-                        if line:
-                            processed.append(line)
-                            line = []
+                        if u:
+                            line.append(u)
                         i += j
                         continue
 
                     if char == ";":
-                        line.append(word)
-                        word = ""
-                        processed.append(line)
-                        line = []
+                        if word:
+                            line.append(word)
+                            word = ""
+                        if line:
+                            processed.append(line)
+                            line = []
                         continue
 
                     if char == "*" and word.endswith("/"):
                         word = ""
                         state = 3
+
+                    if char == '"':
+                        state = 4
+                        continue
 
                 case 1:
                     # comment state
@@ -94,6 +94,22 @@ def lex(path: str) -> tuple[list, str]:
                     elif not char.strip():
                         word = ""
                         continue
+
+                case 4:
+                    # string case
+                    if char == '"':
+                        if word.endswith("\\"):
+                            word = word[:-1]
+                        elif word:
+                            line.append(word)
+                            word = ""
+                            state = 0
+                            continue
+                        else:
+                            state = 0
+                            continue
+                    word += char
+                    continue
 
             if char.strip():
                 word += char
