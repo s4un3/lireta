@@ -1,42 +1,107 @@
-from numpy import conj
+def lex(path: str) -> tuple[list, str]:
+    def _preprocess(s: str) -> tuple[list, int, str]:
+        processed = []
+        config = ""
+        word = ""
+        line = []
+        state = 0
 
+        i = 0
 
-def preprocess(path: str):
+        while i < len(s):
+            i += 1
+            char = s[i - 1]
 
-    if not path.endswith(".lireta"):
-        raise ValueError("Expected a lireta file")
+            match state:
 
-    data = []
-    config = None
-    on_scope = False
-    buffer = []
-    with open(path, "r") as file:
-        contents = file.read().replace(",\n", "")
-        for line in contents.split("\n"):
-            line = line.strip()
-            if line.startswith("#") or not line:
-                continue
-            if line.startswith("config"):
-                config = line.lstrip("config").strip()
-                continue
-            if line.endswith("{"):
-                line = line.rstrip("{").strip()
-                if on_scope:
-                    raise RuntimeError("Only single scoping supported")
-                on_scope = True
-                data.append(line.split())
-                continue
-            if line == "}":
-                if not on_scope:
-                    raise RuntimeError("Not on a scope to close")
-                on_scope = False
-                data.append(buffer)
-                buffer = []
-                continue
+                case 0:
+                    # "normal" state
 
-            if on_scope:
-                buffer.append(line.split())
-            else:
-                data.append(line.split())
+                    if not char.strip():
+                        if word == "config":
+                            word = ""
+                            state = 2
+                        if word:
+                            line.append(word)
+                            word = ""
+                        continue
 
-    return config, data
+                    if char == "#" and not word:
+                        state = 1
+                        if word:
+                            line.append(word)
+                            word = ""
+                        continue
+
+                    if char == "}":
+                        if word:
+                            line.append(word)
+                            word = ""
+                        if line:
+                            processed.append(line)
+                            line = []
+                        return (processed, i, config)
+
+                    if char == "{":
+                        if word:
+                            line.append(word)
+                            word = ""
+                        u, j, c = _preprocess(s[i:])
+                        line.append(u)
+                        if line:
+                            processed.append(line)
+                            line = []
+                        i += j
+                        continue
+
+                    if char == ";":
+                        line.append(word)
+                        word = ""
+                        processed.append(line)
+                        line = []
+                        continue
+
+                    if char == "*" and word.endswith("/"):
+                        word = ""
+                        state = 3
+
+                case 1:
+                    # comment state
+                    if char == "\n":
+                        state = 0
+                        continue
+
+                    continue
+
+                case 2:
+                    # config state
+                    if not word and char != '"':
+                        raise ValueError("Expected a string after 'config'")
+                    if char == ";" and word.endswith('"'):
+                        config = word.strip('"')
+                        word = ""
+                        state = 0
+                    else:
+                        word += char
+                    continue
+
+                case 3:
+                    # multiline comment state
+                    if char == "/" and word.endswith("*"):
+                        word = ""
+                        state = 0
+                        continue
+                    elif not char.strip():
+                        word = ""
+                        continue
+
+            if char.strip():
+                word += char
+
+        if word or line or state:
+            raise RuntimeError("Unexpected end state for block")
+
+        return (processed, i, config)
+
+    content, _, configpath = _preprocess(open(path, "r").read())
+    return (content, configpath)
