@@ -40,7 +40,7 @@ class Scope:
                 "tuning": 440,
                 "bpm": 120,
                 "duration": 1,
-                "instrument": voicethings._instruments["sin"],
+                "instrument": "sin",
                 "intensity": 1,
             }
         else:
@@ -200,16 +200,6 @@ class Scope:
 
         return tuning * 2 ** (sum / 12)
 
-    def removenone(self, l: list) -> list:
-        i = []
-        for item in l:
-            if isinstance(item, list):
-                if (m := self.removenone(item)) != []:
-                    i.append(m)
-            else:
-                i.append(item)
-        return i
-
     def resolve(self, parameters: list[Block], newscope: bool):
         if newscope:
             s = Scope(self._voicethings, self)
@@ -225,7 +215,7 @@ class Scope:
         if isinstance(parameters[0], str):
             if (f := self.notetofreq(parameters[0])) is not None:
                 parameters = self.flat(parameters)
-                return self.resolve(["note", f"{f}Hz", *parameters[1:]], True)
+                return self.resolve(["note", f"{f}Hz", *parameters[1:]], False)
 
             for keyword in self._voicethings._keywords:
                 if keyword.name == parameters[0]:
@@ -237,7 +227,7 @@ class Scope:
 
         if isinstance(parameters[0], AudioWave):
             if len(parameters) > 1:
-                return self.resolve(["seq"] + parameters[0:], True)
+                return self.resolve(["seq"] + parameters[0:], False)
             else:
                 return parameters[0]
 

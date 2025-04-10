@@ -20,3 +20,6 @@ def lireta(path_in: str):
 
     if (audio := root_scope.resolve(content, True)) is not None:
         return audio
+
+
+lireta("docs/example.lireta")

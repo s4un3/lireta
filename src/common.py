@@ -49,7 +49,7 @@ class KWnote(Keyword):
         notename = scope.solveuntil(params[0], [str])
         if (freq := scope.notetofreq(notename)) is None:
             raise ValueError(f"'{notename}' is not a valid note name.")
-        instr: Instrument = scope.read("instrument")
+        instr = scope._voicethings._instruments[scope.read("instrument")]
         return AudioWave().new(
             time, freq, scope.read("intensity"), instr.waveform(freq)
         )
@@ -83,6 +83,33 @@ class KWsimult(Keyword):
         return w if changed else None
 
 
+class KWvar(Keyword):
+    name = "var"
+
+    def fn(self, scope: Scope, params: list):
+        match len(params):
+            case 3:
+                name = scope.solveuntil(params[0], [str])
+                operator = scope.solveuntil(params[1], [str])
+                value = scope.solveuntil(params[2], [str, AudioWave])
+
+                match operator:
+                    case "=":
+                        scope.assign(name, value)
+                    case ":=":
+                        scope.declare(name, value)
+                    case _:
+                        raise RuntimeError(
+                            f"'{operator}' is not a valid parameter for 'var'"
+                        )
+            case 1:
+                return scope.read(scope.solveuntil(params[1], [str]))
+            case _:
+                raise RuntimeError(
+                    "Number of parameters is incorrect for 'var'. It mush have 1 or 3 parameters."
+                )
+
+
 class Sin(Instrument):
     _name = "sin"
 
@@ -90,5 +117,5 @@ class Sin(Instrument):
         return lambda t: np.sin(2 * np.pi * t)
 
 
-available_keywords = [KWseq, KWnote, KWsimult]
+available_keywords = [KWseq, KWnote, KWsimult, KWvar]
 available_instruments = [Sin]

@@ -1,6 +1,7 @@
+var instr = sin;
 simult {
-	instr = std.sin;
-	seq {gliss A B;} {note G; note F;};
+	gliss A B;
+	G; F;
 }{
-	note A++;
+	C 4;
 };
