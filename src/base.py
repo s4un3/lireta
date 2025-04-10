@@ -33,8 +33,13 @@ class VoiceThings:
 
 class Scope:
     def __init__(self, voicethings: VoiceThings, base: Self | None = None):
+
+        # which scope this originates from
         self._base: Self | None = base
-        if self._base is None:
+
+        if (
+            self._base is None
+        ):  # if it is a "root" scope, fill the default built in values
             self._vars = {
                 "octave": 4,
                 "tuning": 440,
@@ -44,10 +49,13 @@ class Scope:
                 "intensity": 1,
             }
         else:
+            # if it is not a root scope, it does not have any initial local variables
             self._vars = {}
+
         self._voicethings = voicethings
 
     def read(self, key: str) -> Any:
+        """Tries to access the scope and its parents and find a key, returning its value"""
         if key in self._vars:
             return self._vars[key]
         elif self._base is None:
@@ -64,11 +72,21 @@ class Scope:
             return self._base._find(key)
 
     def declare(self, key: str, value):
-        self._vars[key] = value
+        """Creates a local entry in the upper scope
+
+        Needs to go to the upper scope due to `Scope.resolve` and `lex` understanding a line as a new scope. A technicality.
+        """
+
+        if self._base is None:
+            # sanity check
+            raise RuntimeError("There isn't a base scope.")
+
+        self._base._vars[key] = value
 
     def assign(self, key: str, value):
+        """Tries to assign a key in the scope and its parents to a value"""
         if not self._find(key):
-            self.declare(key, value)
+            raise KeyError(f"Key '{key}' not found.")
         else:
             if (key in self._vars) or (self._base is None):
                 self._vars[key] = value
@@ -201,49 +219,91 @@ class Scope:
         return tuning * 2 ** (sum / 12)
 
     def resolve(self, parameters: list[Block], newscope: bool):
+        """Main function that takes a parameter list outputed in the lexing step"""
         if newscope:
             s = Scope(self._voicethings, self)
             return s.resolve(parameters, False)
 
+        if not isinstance(parameters, list):
+            return parameters
+
         if len(parameters) == 0:
             return None
 
+        if parameters[0] is None:
+            return self.resolve(parameters[1:], False)
+
         if isinstance(parameters[0], list):
+            # if parameters[0] is a list itself, we need to further process it
+
+            # x is the first parameter after processing
             x = self.resolve(parameters[0], True)
+            # we reconstruct the list replacing the first element with x and call resolve again
             return self.resolve([x, *parameters[1:]], True)
 
         if isinstance(parameters[0], str):
+            # if it is a string, it can be either a keyword or a note name
+
+            # checking if it is a note
             if (f := self.notetofreq(parameters[0])) is not None:
+                # if it is, we adjust the parameters for a "note" call, and then call it
                 parameters = self.flat(parameters)
                 return self.resolve(["note", f"{f}Hz", *parameters[1:]], False)
 
+            # checking if it is a keyword
             for keyword in self._voicethings._keywords:
                 if keyword.name == parameters[0]:
                     parameters = self.flat(parameters)
                     return keyword.fn(self, parameters[1:])
+
+            # if it wasn't a note name nor a string, it's invalid syntax
             raise RuntimeError(
                 f"'{parameters[0]}' is not a valid keyword nor note name."
             )
 
         if isinstance(parameters[0], AudioWave):
             if len(parameters) > 1:
-                return self.resolve(["seq"] + parameters[0:], False)
+                # more than one audio needs concatenating
+                return self.resolve(["seq"] + parameters, False)
             else:
+                # a single one can be directly returned
                 return parameters[0]
 
-    def solveuntil(self, parameters, types: list[type]):
-        if any([isinstance(parameters, t) for t in types]):
+    def solveuntil(self, parameters, types: list[type | None]):
+        """Process parameters recursivelly, assuring the result will have a type listed in `types`"""
+
+        if isinstance(parameters, list) and len(parameters) == 1:
+            return self.solveuntil(parameters[0], types)
+
+        def aux(value, type):
+            """Auxiliary function that extends `isinstance` to None"""
+            return value is None if type is None else isinstance(value, type)
+
+        if any([aux(parameters, t) for t in types]):
+            # if the parameter fit any of the types listed, return it
             return parameters
         else:
             if not isinstance(parameters, list):
+                # parameters are no longer processable but don't match the types
                 raise TypeError("Parameter does not match type.")
-            return self.solveuntil(self.resolve(parameters, True), types)
+
+        # if it is a list (and we have not used `list` in `types`), we need to keep processing
+        return self.solveuntil(self.resolve(parameters, True), types)
 
     def flat(self, l: list):
+        """Removes empty sublists and None from a list, and unfolds some nested lists"""
+        if not isinstance(l, list):
+            return l
         k = []
         for item in l:
             if isinstance(item, list):
-                k.append(self.flat(item))
-            else:
+                if len(item) == 1:
+                    item = item[0]
+                if v := self.flat(item):
+                    if not isinstance(v, list):
+                        k.append([v])
+                    else:
+                        k.append(v)
+            elif item is not None:
                 k.append(item)
         return k

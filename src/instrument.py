@@ -68,8 +68,6 @@ class Instrument:
         pitchless: bool = False,
         continuous: bool = False,
         interpolation: str = "none",
-        freq_effects: Callable[[float, float], float] = lambda f, _: f,
-        amp_effects: Callable[[float, float], float] = lambda v, _: v,
     ):
         """Populates an instrument with parameters
 
@@ -78,8 +76,6 @@ class Instrument:
         cls._pitchless = pitchless
         cls._continuous = continuous
         cls._interpolation = interpolation
-        cls._freq_effects = freq_effects
-        cls._amp_effects = amp_effects
 
     def _fixcontinuous(self, f: Callable[[float], float]) -> Callable[[float], float]:
         """Adjusts a callable from a track to loop"""

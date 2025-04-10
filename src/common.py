@@ -37,16 +37,17 @@ class KWnote(Keyword):
 
     def fn(self, scope: Scope, params: list):
         if len(params) == 2:
-            time = float(scope.solveuntil(params[1], [str]))
+            # we do float(str(...)) here for the type checker, sorry for the mess
+            time = float(str(scope.solveuntil(params[1], [str])))
         elif len(params) != 1:
             raise RuntimeError(
-                f"'note' accepts 1 or 2 parameters. {len(params)} were used"
+                f"Number of parameters is incorrect for 'note'. It mush have 1 or 2 parameters."
             )
         else:
-            time = scope.read("duration")
-        time *= 60 / scope.read("bpm")
+            time = float(scope.read("duration"))
+        time *= 60 / float(scope.read("bpm"))
 
-        notename = scope.solveuntil(params[0], [str])
+        notename = str(scope.solveuntil(params[0], [str]))
         if (freq := scope.notetofreq(notename)) is None:
             raise ValueError(f"'{notename}' is not a valid note name.")
         instr = scope._voicethings._instruments[scope.read("instrument")]
@@ -89,7 +90,7 @@ class KWvar(Keyword):
     def fn(self, scope: Scope, params: list):
         match len(params):
             case 3:
-                name = scope.solveuntil(params[0], [str])
+                name = str(scope.solveuntil(params[0], [str]))
                 operator = scope.solveuntil(params[1], [str])
                 value = scope.solveuntil(params[2], [str, AudioWave])
 
@@ -103,11 +104,54 @@ class KWvar(Keyword):
                             f"'{operator}' is not a valid parameter for 'var'"
                         )
             case 1:
-                return scope.read(scope.solveuntil(params[1], [str]))
+                x = scope.read(str(scope.solveuntil(params[0], [str])))
+                return x
             case _:
                 raise RuntimeError(
                     "Number of parameters is incorrect for 'var'. It mush have 1 or 3 parameters."
                 )
+
+
+class KWprint(Keyword):
+    name = "print"
+
+    def fn(self, scope: Scope, params: list):
+
+        def _format(s: str):
+            replacements = {r"\n": "\n", r"\t": "\t", r"\b": "\b", r"\r": "\r"}
+            for key in replacements:
+                s = s.replace(key, replacements[key])
+
+            return s
+
+        for param in params:
+            print(end=_format(str(scope.solveuntil(param, [str]))))
+
+
+class KWsfx(Keyword):
+    name = "sfx"
+
+    def fn(self, scope: Scope, params: list):
+        instr = str(scope.solveuntil(params, [str]))
+        s = Scope(scope._voicethings, scope)
+        s.declare("instrument", instr)
+        instrument = scope._voicethings._instruments[instr]
+        track = instrument._tracks[0]
+        freq = track._freq
+        duration = len(track._wave) / track._samplerate
+        return AudioWave().new(duration, freq, waveform=track._as_callable())
+
+
+class KWrepeat(Keyword):
+    name = "repeat"
+
+    def fn(self, scope: Scope, params: list):
+        if len(params) == 0:
+            raise RuntimeError(
+                "Number of parameters is incorrect for 'repeat'. It mush have at least 1 parameter."
+            )
+        repetitions = int(str(scope.solveuntil(params[0], [str])))
+        return [list(params[1:])] * repetitions
 
 
 class Sin(Instrument):
@@ -117,5 +161,5 @@ class Sin(Instrument):
         return lambda t: np.sin(2 * np.pi * t)
 
 
-available_keywords = [KWseq, KWnote, KWsimult, KWvar]
+available_keywords = [KWseq, KWnote, KWsimult, KWvar, KWprint, KWsfx, KWrepeat]
 available_instruments = [Sin]

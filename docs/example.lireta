@@ -1,7 +1,1 @@
-var instr = sin;
-simult {
-	gliss A B;
-	G; F;
-}{
-	C 4;
-};
+
