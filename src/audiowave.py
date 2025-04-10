@@ -125,7 +125,11 @@ class AudioWave:
         It's implemented for the sake of completion and symmetry with the other operations, like `__mul__` vs `scale`, `append` vs `__gt__`
         """
 
-        return (self := self + other)
+        aux = self + other
+        self._wave = aux._wave
+        self._samplerate = aux._samplerate
+        self._voicecount = aux._voicecount
+        return self
 
     def append(
         self, other: Self, newvoicecount: Callable[[int, int], int] = lambda _, __: 1
@@ -133,8 +137,12 @@ class AudioWave:
         """Puts an audio at the end of this track"""
         self._sampleratefix(other)
 
-        self.scale(1 / self._voicecount)
-        self._wave.extend([i / other._voicecount for i in other._wave])
+        if self._voicecount != 0:
+            self.scale(1 / self._voicecount)
+        aux = other.copy()
+        if aux._voicecount != 0:
+            aux.scale(1 / aux._voicecount)
+        self._wave.extend(aux._wave)
         self._voicecount = newvoicecount(self._voicecount, other._voicecount)
 
     def __gt__(self, other):

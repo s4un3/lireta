@@ -1,7 +1,13 @@
-from typing import Union, Callable
+from typing import Any, Union, Callable, Self
 import re
+from dataclasses import dataclass
+
+from numpy.lib.arraysetops import isin
+from audiowave import AudioWave
+from instrument import Instrument
 
 Num = Union[float, int]
+Block = Union[list, str, None, AudioWave]
 
 
 class Keyword:
@@ -11,17 +17,63 @@ class Keyword:
     # what string triggers the keyword
 
     fn: Callable
+    # first parameter: scope that called it
 
 
+@dataclass
 class VoiceThings:
-    """Utility class to carry parameters around and convert notes to frequencies"""
+    """Class used to store common data between all scopes that should not be changed by keywords"""
 
-    default_octave: int
-    tuning: float
+    def __init__(
+        self, keywords: list[type[Keyword]], instruments: dict[str, type[Instrument]]
+    ):
+        self._keywords = [k() for k in keywords]
+        self._instruments = {name: instruments[name]() for name in instruments}
 
-    def __init__(self, default_octave: int = 4, tuning: float = 440):
-        self.default_octave = default_octave
-        self.tuning = tuning
+
+class Scope:
+    def __init__(self, voicethings: VoiceThings, base: Self | None = None):
+        self._base: Self | None = base
+        if self._base is None:
+            self._vars = {
+                "octave": 4,
+                "tuning": 440,
+                "bpm": 120,
+                "duration": 1,
+                "instrument": voicethings._instruments["sin"],
+                "intensity": 1,
+            }
+        else:
+            self._vars = {}
+        self._voicethings = voicethings
+
+    def read(self, key: str) -> Any:
+        if key in self._vars:
+            return self._vars[key]
+        elif self._base is None:
+            raise KeyError(f"Key '{key}' not found.")
+        else:
+            return self._base.read(key)
+
+    def _find(self, key: str) -> bool:
+        if key in self._vars:
+            return True
+        elif self._base is None:
+            return False
+        else:
+            return self._base._find(key)
+
+    def declare(self, key: str, value):
+        self._vars[key] = value
+
+    def assign(self, key: str, value):
+        if not self._find(key):
+            self.declare(key, value)
+        else:
+            if (key in self._vars) or (self._base is None):
+                self._vars[key] = value
+            else:
+                self._base.assign(key, value)
 
     def notetofreq(self, note: str) -> float | None:
         """None is the result of an invalid note, otherwise the result is a float"""
@@ -136,13 +188,72 @@ class VoiceThings:
                     raise ValueError(f"Unexpected relative octave modifier '{i}'.")
         computed[3] = sum
 
+        octave = self.read("octave")
+        tuning = self.read("tuning")
+
         computed[4] = (
-            int(groups[4].replace("~", "-")) * 12
-            if groups[4]
-            else self.default_octave * 12
+            int(groups[4].replace("~", "-")) * 12 if groups[4] else octave * 12
         )
         sum = 0  # reusing again
         for i in computed:
             sum += i
 
-        return self.tuning * 2 ** (sum / 12)
+        return tuning * 2 ** (sum / 12)
+
+    def removenone(self, l: list) -> list:
+        i = []
+        for item in l:
+            if isinstance(item, list):
+                if (m := self.removenone(item)) != []:
+                    i.append(m)
+            else:
+                i.append(item)
+        return i
+
+    def resolve(self, parameters: list[Block], newscope: bool):
+        if newscope:
+            s = Scope(self._voicethings, self)
+            return s.resolve(parameters, False)
+
+        if len(parameters) == 0:
+            return None
+
+        if isinstance(parameters[0], list):
+            x = self.resolve(parameters[0], True)
+            return self.resolve([x, *parameters[1:]], True)
+
+        if isinstance(parameters[0], str):
+            if (f := self.notetofreq(parameters[0])) is not None:
+                parameters = self.flat(parameters)
+                return self.resolve(["note", f"{f}Hz", *parameters[1:]], True)
+
+            for keyword in self._voicethings._keywords:
+                if keyword.name == parameters[0]:
+                    parameters = self.flat(parameters)
+                    return keyword.fn(self, parameters[1:])
+            raise RuntimeError(
+                f"'{parameters[0]}' is not a valid keyword nor note name."
+            )
+
+        if isinstance(parameters[0], AudioWave):
+            if len(parameters) > 1:
+                return self.resolve(["seq"] + parameters[0:], True)
+            else:
+                return parameters[0]
+
+    def solveuntil(self, parameters, types: list[type]):
+        if any([isinstance(parameters, t) for t in types]):
+            return parameters
+        else:
+            if not isinstance(parameters, list):
+                raise TypeError("Parameter does not match type.")
+            return self.solveuntil(self.resolve(parameters, True), types)
+
+    def flat(self, l: list):
+        k = []
+        for item in l:
+            if isinstance(item, list):
+                k.append(self.flat(item))
+            else:
+                k.append(item)
+        return k

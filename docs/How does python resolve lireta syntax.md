@@ -49,7 +49,7 @@ These are called keywords in lireta, and they are essentially functions that wil
 
 - `None`: keyword does not return. Instead, it might change a variable, for example.
 - `AudioWave`: class in lireta, that stores the audio signal.
-- `str`: the keyword evaluates the parameters to a string, that might be used as a keyword or be the parameter for a keyword later.
+- `str`: the keyword evaluates the parameters to a string, that will probably be the parameter for a keyword later.
 - Another line: similar to the `str` return type, but it allows for whole blocks to be in there.
 
 Notice that, in our example, the keyword `"seq"` has parameters that are lists (lines). However, `"seq"` expects `str` or `AudioWave`, so it needs to make these lines to be evaluated first.
