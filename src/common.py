@@ -154,6 +154,46 @@ class KWrepeat(Keyword):
         return [list(params[1:])] * repetitions
 
 
+class KWfunc(Keyword):
+    name = "func"
+
+    def fn(self, scope: Scope, params: list):
+        if ":" in params:
+            if "=" in params:
+                if params[1] != ":":
+                    raise SyntaxError("Wrong syntax for 'func'.")
+                args = []
+                i = 3
+                for param in params[2:]:
+                    if param == "=":
+                        break
+                    args.append(param)
+                    i += 1
+                scope.declare(params[0], (args, params[i:]))
+            else:
+                fargs, block = scope.read(params[0])
+                args = params[2:]
+                if len(fargs) != len(args):
+                    raise SyntaxError(
+                        f"Function '{params[0]}' expects {len(fargs)} parameters and {len(args)} were used."
+                    )
+                declarations = []
+                for i in range(len(fargs)):
+                    declarations.append(["var", fargs[i], ":=", args[i]])
+                return scope.resolve(declarations + block, True)
+
+        else:
+            if "=" in params:
+                scope.declare(params[0], ([], params[2]))
+            else:
+                args, block = scope.read(params[0])
+                if len(args):
+                    raise SyntaxError(
+                        f"Function '{params[0]}' expects {len(args)} parameters"
+                    )
+                return scope.resolve(block, True)
+
+
 class Sin(Instrument):
     _name = "sin"
 
@@ -161,5 +201,5 @@ class Sin(Instrument):
         return lambda t: np.sin(2 * np.pi * t)
 
 
-available_keywords = [KWseq, KWnote, KWsimult, KWvar, KWprint, KWsfx, KWrepeat]
+available_keywords = [KWseq, KWnote, KWsimult, KWvar, KWprint, KWsfx, KWrepeat, KWfunc]
 available_instruments = [Sin]
