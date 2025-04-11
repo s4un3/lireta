@@ -208,6 +208,20 @@ class Sin(Instrument):
         return lambda t: np.sin(2 * np.pi * t)
 
 
+class Square(Instrument):
+    _name = "square"
+
+    def waveform(self, frequency: float):
+        return lambda t: np.sign(np.sin(2 * np.pi * t))
+
+
+class Saw(Instrument):
+    _name = "saw"
+
+    def waveform(self, frequency: float):
+        return lambda t: np.arcsin(np.sin(2 * np.pi * t))
+
+
 available_keywords = [
     KWseq,
     KWnote,
@@ -219,4 +233,4 @@ available_keywords = [
     KWfunc,
     KWdot,
 ]
-available_instruments = [Sin]
+available_instruments = [Sin, Square, Saw]
