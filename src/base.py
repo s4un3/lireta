@@ -10,6 +10,14 @@ Num = Union[float, int]
 Block = Union[list, str, None, AudioWave]
 
 
+def to_flt(s: str):
+    if isinstance(s, str) and "/" in s:
+        v = s.split("/")
+        return float(v[0]) / float(v[1])
+    else:
+        return float(s)
+
+
 class Keyword:
     """Base class for keywords"""
 

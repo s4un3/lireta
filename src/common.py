@@ -1,5 +1,5 @@
 from instrument import Instrument
-from base import Keyword, Scope
+from base import Keyword, Scope, to_flt
 from audiowave import AudioWave
 import numpy as np
 
@@ -37,15 +37,14 @@ class KWnote(Keyword):
 
     def fn(self, scope: Scope, params: list):
         if len(params) == 2:
-            # we do float(str(...)) here for the type checker, sorry for the mess
-            time = float(str(scope.solveuntil(params[1], [str])))
+            time = to_flt(str(scope.solveuntil(params[1], [str])))
         elif len(params) != 1:
             raise RuntimeError(
                 f"Number of parameters is incorrect for 'note'. It mush have 1 or 2 parameters."
             )
         else:
-            time = float(scope.read("duration"))
-        time *= 60 / float(scope.read("bpm"))
+            time = to_flt(scope.read("duration"))
+        time *= 60 / to_flt(scope.read("bpm"))
 
         notename = str(scope.solveuntil(params[0], [str]))
         if (freq := scope.notetofreq(notename)) is None:
@@ -138,15 +137,14 @@ class KWsfx(Keyword):
         freq = track._freq
 
         if len(params) == 2:
-            # we do float(str(...)) here for the type checker, sorry for the mess
-            time = float(str(scope.solveuntil(params[1], [str])))
+            time = to_flt(str(scope.solveuntil(params[1], [str])))
         elif len(params) != 1:
             raise RuntimeError(
                 f"Number of parameters is incorrect for 'sfx'. It mush have 1 or 2 parameters."
             )
         else:
-            time = float(scope.read("duration"))
-        time *= 60 / float(scope.read("bpm"))
+            time = to_flt(scope.read("duration"))
+        time *= 60 / to_flt(scope.read("bpm"))
 
         return AudioWave().new(time, freq, waveform=track._as_callable())
 
