@@ -132,14 +132,23 @@ class KWsfx(Keyword):
     name = "sfx"
 
     def fn(self, scope: Scope, params: list):
-        instr = str(scope.solveuntil(params, [str]))
-        s = Scope(scope._voicethings, scope)
-        s.declare("instrument", instr)
+        instr = str(scope.solveuntil(params[0], [str]))
         instrument = scope._voicethings._instruments[instr]
         track = instrument._tracks[0]
         freq = track._freq
-        duration = len(track._wave) / track._samplerate
-        return AudioWave().new(duration, freq, waveform=track._as_callable())
+
+        if len(params) == 2:
+            # we do float(str(...)) here for the type checker, sorry for the mess
+            time = float(str(scope.solveuntil(params[1], [str])))
+        elif len(params) != 1:
+            raise RuntimeError(
+                f"Number of parameters is incorrect for 'sfx'. It mush have 1 or 2 parameters."
+            )
+        else:
+            time = float(scope.read("duration"))
+        time *= 60 / float(scope.read("bpm"))
+
+        return AudioWave().new(time, freq, waveform=track._as_callable())
 
 
 class KWrepeat(Keyword):
