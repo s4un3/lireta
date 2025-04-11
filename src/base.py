@@ -214,8 +214,8 @@ class Scope:
                     raise ValueError(f"Unexpected relative octave modifier '{i}'.")
         computed[3] = sum
 
-        octave = self.read("octave")
-        tuning = self.read("tuning")
+        octave = to_flt(self.read("octave"))
+        tuning = to_flt(self.read("tuning"))
 
         computed[4] = (
             int(groups[4].replace("~", "-")) * 12 if groups[4] else octave * 12
@@ -290,13 +290,13 @@ class Scope:
         if any([aux(parameters, t) for t in types]):
             # if the parameter fit any of the types listed, return it
             return parameters
-        else:
-            if not isinstance(parameters, list):
-                # parameters are no longer processable but don't match the types
-                raise TypeError("Parameter does not match type.")
 
-        # if it is a list (and we have not used `list` in `types`), we need to keep processing
-        return self.solveuntil(self.resolve(parameters, True), types)
+        if isinstance(parameters, str):
+            return self.solveuntil(self.resolve([parameters], False), types)
+
+        if isinstance(parameters, list):
+            # if it is a list (and we have not used `list` in `types`), we need to keep processing
+            return self.solveuntil(self.resolve(parameters, True), types)
 
     def flat(self, l: list):
         """Removes empty sublists and None from a list, and unfolds some nested lists"""
