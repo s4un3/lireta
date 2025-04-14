@@ -40,7 +40,9 @@ var name := value (3)
 ```
 
 (1) Acess and returns the value of the variable with the corresponding name.
+
 (2) Assigns a value to the variable, and creates an error if it has not been declared yet. Search in parents scopes too.
+
 (3) Declares a variable in the current scope and assigns a value.
 
 ## `print`
@@ -90,10 +92,15 @@ func f : ... := {...} (6)
 ```
 
 (1) Calls the function without any parameters.
+
 (2) Calls the function with the informed parameters.
+
 (3) Assigns a new parameterless function to an existing function.
+
 (4) Declares a parameterless function.
+
 (5) Assigns a new function (with parameters) to an existing function.
+
 (6) Declares a function (with parameters).
 
 Parameters are strings that will be variable names, separated by space, like
