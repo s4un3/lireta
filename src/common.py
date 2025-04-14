@@ -124,6 +124,10 @@ class KWsfx(Keyword):
     def fn(self, scope: Scope, params: list):
         instr = str(scope.solveuntil(params[0], [str]))
         instrument = scope._voicethings._instruments[instr]
+        if not instrument._pitchless:
+            raise ValueError(
+                "Instrument must be pitchless in order to be used as an effect."
+            )
         track = instrument._tracks[0]
         freq = track._freq
 
