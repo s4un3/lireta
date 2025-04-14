@@ -172,9 +172,9 @@ class KWfunc(Keyword):
                     args.append(param)
                     i += 1
                 if ":=" in params:
-                    scope.declare(params[0], (args, params[i:], scope.child()))
+                    scope.declare(params[0], (args, params[i:], scope))
                 else:
-                    scope.assign(params[0], (args, params[i:], scope.child()))
+                    scope.assign(params[0], (args, params[i:], scope))
             else:
                 fargs, block, s = scope.read(params[0])
                 args = params[2:]
