@@ -17,9 +17,6 @@ def processjson(
 
     All parameters except `path` should not be used except for recursive calls"""
 
-    if not path.endswith(".json"):
-        raise ValueError("Expected a json file")
-
     if path in visited_jsons:
         raise RecursionError("Circular preloading")
     visited_jsons.append(path)

@@ -1,3 +1,5 @@
+from numpy import format_float_scientific
+from sounddevice import default
 from lexer import lex
 from base import Scope, VoiceThings
 from common import available_keywords, available_instruments
@@ -23,4 +25,31 @@ def lireta(path_in: str) -> AudioWave:
     raise TypeError("Lireta script does not evaluate to an audio.")
 
 
-lireta("docs/example.lireta").play()
+if __name__ == "__main__":
+
+    from sys import argv, exit
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Produces audio based on a .lireta file. If no output path is provided, simply plays it, otherwise exports it. "
+    )
+
+    parser.add_argument("input", help="Input file path")
+    parser.add_argument("--output", "-o", help="Output file path", default=None)
+    parser.add_argument(
+        "--play",
+        "-p",
+        help="Play the audio even if an output file is provided",
+        action="store_true",
+    )
+
+    args = parser.parse_args()
+
+    audio = lireta(args.input)
+
+    if args.output is None:
+        audio.play()
+        exit()
+    elif args.play:
+        audio.play()
+    audio.export_wav(args.output)
