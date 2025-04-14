@@ -62,6 +62,9 @@ class Scope:
 
         self._voicethings = voicethings
 
+    def child(self):
+        return Scope(self._voicethings, self)
+
     def read(self, key: str) -> Any:
         """Tries to access the scope and its parents and find a key, returning its value"""
         if key in self._vars:

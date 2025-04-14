@@ -157,19 +157,22 @@ class KWfunc(Keyword):
 
     def fn(self, scope: Scope, params: list):
         if ":" in params:
-            if "=" in params:
+            if "=" in params or ":=" in params:
                 if params[1] != ":":
                     raise SyntaxError("Wrong syntax for 'func'.")
                 args = []
                 i = 3
                 for param in params[2:]:
-                    if param == "=":
+                    if param in ["=", ":="]:
                         break
                     args.append(param)
                     i += 1
-                scope.declare(params[0], (args, params[i:]))
+                if ":=" in params:
+                    scope.declare(params[0], (args, params[i:], scope.child()))
+                else:
+                    scope.assign(params[0], (args, params[i:], scope.child()))
             else:
-                fargs, block = scope.read(params[0])
+                fargs, block, s = scope.read(params[0])
                 args = params[2:]
                 if len(fargs) != len(args):
                     raise SyntaxError(
@@ -178,18 +181,20 @@ class KWfunc(Keyword):
                 declarations = []
                 for i in range(len(fargs)):
                     declarations.append(["var", fargs[i], ":=", args[i]])
-                return scope.resolve(declarations + block, True)
+                return s.resolve(declarations + block, True)
 
         else:
-            if "=" in params:
-                scope.declare(params[0], ([], params[2]))
+            if ":=" in params:
+                scope.declare(params[0], ([], params[2], scope.child()))
+            elif "=" in params:
+                scope.assign(params[0], ([], params[2], scope.child()))
             else:
-                args, block = scope.read(params[0])
+                args, block, s = scope.read(params[0])
                 if len(args):
                     raise SyntaxError(
                         f"Function '{params[0]}' expects {len(args)} parameters"
                     )
-                return scope.resolve(block, True)
+                return s.resolve(block, True)
 
 
 class KWdot(Keyword):
