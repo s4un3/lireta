@@ -203,8 +203,8 @@ class KWfunc(Keyword):
                 return s.resolve(block, True)
 
 
-class KWvoid(Keyword):
-    name = "void"
+class KWdot(Keyword):
+    name = "."
 
     def fn(self, scope: Scope, params: list):
         for item in params:
@@ -212,17 +212,17 @@ class KWvoid(Keyword):
                 scope.resolve(item, False)
 
 
-class KWreturn(Keyword):
-    name = "return"
+class KWliteral(Keyword):
+    name = "literal"
 
     def fn(self, scope: Scope, params: list):
         ret = []
         for item in params:
             if isinstance(item, list):
-                if (v := scope.resolve(item, False)) is not None:
-                    ret.append(v)
-            elif item is not None:
-                ret.append(item)
+                item = scope.resolve(item, True)
+            if item is None:
+                continue
+            ret.append(item)
         return ret
 
 
@@ -256,7 +256,7 @@ available_keywords = [
     KWsfx,
     KWrepeat,
     KWfunc,
-    KWvoid,
-    KWreturn,
+    KWdot,
+    KWliteral,
 ]
 available_instruments = [Sin, Square, Saw]
