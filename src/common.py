@@ -14,7 +14,7 @@ class KWseq(Keyword):
             item = scope.solveuntil(item, [AudioWave, None])
             if item is None:
                 continue
-            if isinstance(item, AudioWave):
+            elif isinstance(item, AudioWave):
                 w.append(item)
                 changed = True
                 continue
