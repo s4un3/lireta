@@ -231,6 +231,9 @@ class Scope:
 
     def resolve(self, parameters: list[Block], newscope: bool):
         """Main function that takes a parameter list outputed in the lexing step"""
+
+        parameters = self.flat(parameters)
+
         if newscope:
             s = Scope(self._voicethings, self)
             return s.resolve(parameters, False)
@@ -240,9 +243,6 @@ class Scope:
 
         if len(parameters) == 0:
             return None
-
-        if parameters[0] is None:
-            return self.resolve(parameters[1:], False)
 
         if isinstance(parameters[0], list):
             # if parameters[0] is a list itself, we need to further process it
