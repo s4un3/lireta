@@ -115,6 +115,8 @@ class KWprint(Keyword):
             return s
 
         for param in params:
+            if param is None:
+                continue
             print(end=_format(str(scope.solveuntil(param, [str]))))
 
 
@@ -201,13 +203,27 @@ class KWfunc(Keyword):
                 return s.resolve(block, True)
 
 
-class KWdot(Keyword):
-    name = "."
+class KWvoid(Keyword):
+    name = "void"
 
     def fn(self, scope: Scope, params: list):
         for item in params:
             if isinstance(item, list):
                 scope.resolve(item, False)
+
+
+class KWreturn(Keyword):
+    name = "return"
+
+    def fn(self, scope: Scope, params: list):
+        ret = []
+        for item in params:
+            if isinstance(item, list):
+                if (v := scope.resolve(item, False)) is not None:
+                    ret.append(v)
+            elif item is not None:
+                ret.append(item)
+        return ret
 
 
 class Sin(Instrument):
@@ -240,6 +256,7 @@ available_keywords = [
     KWsfx,
     KWrepeat,
     KWfunc,
-    KWdot,
+    KWvoid,
+    KWreturn,
 ]
 available_instruments = [Sin, Square, Saw]
