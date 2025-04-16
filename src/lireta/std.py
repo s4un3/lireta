@@ -1,7 +1,8 @@
 from instrument import Instrument
-from base import Keyword, Scope, to_flt, LiretaString, flat
+from base import Keyword, Scope, to_flt, LiretaString, Block, Line
 from audiowave import AudioWave
 import numpy as np
+from process import expect
 
 
 class KWseq(Keyword):
@@ -11,7 +12,7 @@ class KWseq(Keyword):
         w = AudioWave()
         changed = False
         for item in params:
-            item = scope.solveuntil(item, [AudioWave, None])
+            item = expect(scope, item, [AudioWave, None])
             if item is None:
                 continue
             elif isinstance(item, AudioWave):
@@ -28,7 +29,7 @@ class KWnote(Keyword):
 
     def fn(self, scope: Scope, params: list):
         if len(params) == 2:
-            time = to_flt(str(scope.solveuntil(params[1], [str, LiretaString])))
+            time = to_flt(str(expect(scope, params[1], [str, LiretaString])))
         elif len(params) != 1:
             raise RuntimeError(
                 f"Number of parameters is incorrect for 'note'. It mush have 1 or 2 parameters."
@@ -37,10 +38,10 @@ class KWnote(Keyword):
             time = to_flt(scope.read("duration"))
         time *= 60 / to_flt(scope.read("bpm"))
 
-        notename = str(scope.solveuntil(params[0], [str, LiretaString]))
+        notename = str(expect(scope, params[0], [str, LiretaString]))
         if (freq := scope.notetofreq(notename)) is None:
             raise ValueError(f"'{notename}' is not a valid note name.")
-        instr = scope._voicethings._instruments[scope.read("instrument")]
+        instr = scope._common._instruments[scope.read("instrument")]
         return AudioWave().new(
             time, freq, to_flt(scope.read("intensity")), instr.waveform(freq)
         )
@@ -53,24 +54,15 @@ class KWsimult(Keyword):
         w = AudioWave()
         changed = False
         for item in params:
+            item = expect(scope, item, [AudioWave, None])
             if item is None:
                 continue
-            if isinstance(item, AudioWave):
+            elif isinstance(item, AudioWave):
                 w.mix(item)
                 changed = True
                 continue
-            if isinstance(item, str):
-                if not isinstance(t := scope.resolve(["note", item], True), AudioWave):
-                    raise TypeError("Keyword 'seq' expects audio data")
-                w.mix(t)
-                changed = True
-                continue
-            if isinstance(item, list):
-                if not isinstance(t := scope.resolve(item, True), AudioWave):
-                    raise TypeError("Keyword 'seq' expects audio data")
-                w.mix(t)
-                changed = True
-                continue
+            else:
+                raise TypeError("Keyword 'simult' expects audio data")
         return w if changed else None
 
 
@@ -80,9 +72,9 @@ class KWvar(Keyword):
     def fn(self, scope: Scope, params: list):
         match len(params):
             case 3:
-                name = str(scope.solveuntil(params[0], [str, LiretaString]))
-                operator = str(scope.solveuntil(params[1], [str, LiretaString]))
-                value = scope.solveuntil(params[2], [str, AudioWave, LiretaString])
+                name = str(expect(scope, params[0], [str, LiretaString]))
+                operator = str(expect(scope, params[1], [str, LiretaString]))
+                value = expect(scope, params[2], [str, AudioWave, LiretaString])
                 if isinstance(value, LiretaString):
                     value = str(value)
 
@@ -96,8 +88,7 @@ class KWvar(Keyword):
                             f"'{operator}' is not a valid parameter for 'var'"
                         )
             case 1:
-                x = scope.read(str(scope.solveuntil(params[0], [str, LiretaString])))
-                return x
+                return scope.read(str(expect(scope, params[0], [str, LiretaString])))
             case _:
                 raise RuntimeError(
                     "Number of parameters is incorrect for 'var'. It mush have 1 or 3 parameters."
@@ -119,15 +110,15 @@ class KWprint(Keyword):
         for param in params:
             if param is None:
                 continue
-            print(end=_format(str(scope.solveuntil(param, [str, LiretaString]))))
+            print(end=_format(str(expect(scope, param, [str, LiretaString]))))
 
 
 class KWsfx(Keyword):
     name = "sfx"
 
     def fn(self, scope: Scope, params: list):
-        instr = str(scope.solveuntil(params[0], [str, LiretaString]))
-        instrument = scope._voicethings._instruments[instr]
+        instr = str(expect(scope, params[0], [str, LiretaString]))
+        instrument = scope._common._instruments[instr]
         if not instrument._pitchless:
             raise ValueError(
                 "Instrument must be pitchless in order to be used as an effect."
@@ -136,7 +127,7 @@ class KWsfx(Keyword):
         freq = track._freq
 
         if len(params) == 2:
-            time = to_flt(str(scope.solveuntil(params[1], [str, LiretaString])))
+            time = to_flt(str(expect(scope, params[1], [str, LiretaString])))
         elif len(params) != 1:
             raise RuntimeError(
                 f"Number of parameters is incorrect for 'sfx'. It mush have 1 or 2 parameters."
@@ -156,7 +147,7 @@ class KWrepeat(Keyword):
             raise RuntimeError(
                 "Number of parameters is incorrect for 'repeat'. It mush have at least 1 parameter."
             )
-        repetitions = int(str(scope.solveuntil(params[0], [str, LiretaString])))
+        repetitions = int(str(expect(scope, params[0], [str, LiretaString])))
         return [list(params[1:])] * repetitions
 
 
@@ -176,11 +167,13 @@ class KWfunc(Keyword):
                     args.append(param)
                     i += 1
                 if ":=" in params:
-                    scope.declare(params[0], (args, params[i:], scope._base))
+                    scope.declare(params[0], (args, params[i:], scope))
                 else:
-                    scope.assign(params[0], (args, params[i:], scope._base))
+                    scope.assign(params[0], (args, params[i:], scope))
             else:
                 fargs, block, s = scope.read(params[0])
+                block: list[Block]
+                s: Scope
                 args = params[2:]
                 if len(fargs) != len(args):
                     raise SyntaxError(
@@ -188,22 +181,24 @@ class KWfunc(Keyword):
                     )
                 declarations = []
                 for i in range(len(fargs)):
-                    declarations.append(["var", fargs[i], ":=", args[i]])
-                return s.flat(s.resolve(declarations + block, True))
+                    declarations.append(Line(["var", fargs[i], ":=", args[i]]))
+                for j in block:
+                    declarations.append(Line([j]))
+                return Block(declarations)
 
         else:
             if ":=" in params:
-                scope.declare(params[0], ([], params[2], scope._base))
+                scope.declare(params[0], ([], params[2], scope))
 
             elif "=" in params:
-                scope.assign(params[0], ([], params[2], scope._base))
+                scope.assign(params[0], ([], params[2], scope))
             else:
                 args, block, s = scope.read(params[0])
                 if len(args):
                     raise SyntaxError(
                         f"Function '{params[0]}' expects {len(args)} parameters"
                     )
-                return s.resolve(block, True)
+                return block
 
 
 class KWdot(Keyword):
@@ -211,8 +206,7 @@ class KWdot(Keyword):
 
     def fn(self, scope: Scope, params: list):
         for item in params:
-            if isinstance(item, list):
-                scope.resolve(item, False)
+            expect(scope, item, [str, LiretaString, AudioWave, None])
 
 
 class KWstring(Keyword):
@@ -222,28 +216,11 @@ class KWstring(Keyword):
         ret = ""
         for item in params:
             if isinstance(item, list):
-                item = scope.solveuntil(item, [str, LiretaString])
+                item = expect(scope, item, [str, LiretaString])
             if item is None:
                 continue
             ret += str(item)
         return LiretaString(ret)
-
-
-class KWasterisk(Keyword):
-    name = "*"
-
-    def fn(self, scope: Scope, params: list):
-        if len(params) != 1:
-            raise RuntimeError("'*' Must have only one parameter")
-        if (u := scope.solveuntil(params[0], [None, LiretaString])) is not None:
-            return str(u)
-
-
-class KWdbg(Keyword):
-    name = "dbg"
-
-    def fn(self, scope: Scope, params: list):
-        print(params)
 
 
 class Sin(Instrument):
@@ -278,7 +255,5 @@ available_keywords = [
     KWfunc,
     KWdot,
     KWstring,
-    KWasterisk,
-    KWdbg,
 ]
 available_instruments = [Sin, Square, Saw]

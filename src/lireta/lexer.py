@@ -1,7 +1,7 @@
-from base import LiretaString
+from base import LiretaString, Block, Line
 
 
-def lex(path: str) -> tuple[list, str]:
+def lex(path: str) -> tuple[Block, str]:
     def _preprocess(s: str) -> tuple[list, int, str]:
         processed = []
         config = ""
@@ -47,7 +47,7 @@ def lex(path: str) -> tuple[list, str]:
                             word = ""
                         u, j, c = _preprocess(s[i:])
                         if u:
-                            line.append(u)
+                            line.append(Block(u))
                         i += j
                         continue
 
@@ -56,7 +56,7 @@ def lex(path: str) -> tuple[list, str]:
                             line.append(word)
                             word = ""
                         if line:
-                            processed.append(line)
+                            processed.append(Line(line))
                             line = []
                         continue
 
@@ -123,4 +123,4 @@ def lex(path: str) -> tuple[list, str]:
         return (processed, i, config)
 
     content, _, configpath = _preprocess(open(path, "r").read())
-    return (content, configpath)
+    return (Block(content), configpath)
