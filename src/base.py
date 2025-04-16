@@ -3,12 +3,10 @@ from typing import Any, Union, Callable, Self
 import re
 from dataclasses import dataclass
 
-from numpy.lib.arraysetops import isin
 from audiowave import AudioWave
 from instrument import Instrument
 
 Num = Union[float, int]
-Block = Union[list, str, None, AudioWave]
 
 
 def to_flt(s: str):
@@ -17,6 +15,33 @@ def to_flt(s: str):
         return float(v[0]) / float(v[1])
     else:
         return float(s)
+
+
+def flat(l: list):
+    """Removes empty sublists and None from a list, and unfolds some nested lists"""
+    if not isinstance(l, list):
+        return l
+    k = []
+    for item in l:
+        if isinstance(item, list):
+            if len(item) == 1:
+                item = flat(item[0])
+            if v := flat(item):
+                if not isinstance(v, list):
+                    k.append([v])
+                else:
+                    k.append(v)
+        elif item is not None:
+            k.append(item)
+    return k
+
+
+class LiretaString:
+    def __init__(self, value: str):
+        self.value = str(value)
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class Keyword:
@@ -85,17 +110,16 @@ class Scope:
         else:
             return self._base._find(key)
 
-    def declare(self, key: str, value):
-        """Creates a local entry in the upper scope
+    def declare(self, key: str, value, upscope: bool = False):
+        """Creates a local entry in the upper scope"""
 
-        Needs to go to the upper scope due to `Scope.resolve` and `lex` understanding a line as a new scope. A technicality.
-        """
-
-        if self._base is None:
-            # sanity check
-            raise RuntimeError("There isn't a base scope.")
-
-        self._base._vars[key] = value
+        s = self
+        # needs to go to the upper scope due to `Scope.resolve` and `lex` understanding a line as a new scope
+        if s._base is not None:
+            s = s._base
+        if upscope and s._base is not None:
+            s = s._base
+        s._vars[key] = value
 
     def assign(self, key: str, value):
         """Tries to assign a key in the scope and its parents to a value"""
@@ -232,10 +256,8 @@ class Scope:
 
         return tuning * 2 ** (sum / 12)
 
-    def resolve(self, parameters: list[Block], newscope: bool):
+    def resolve(self, parameters: list, newscope: bool):
         """Main function that takes a parameter list outputed in the lexing step"""
-
-        parameters = self.flat(parameters)
 
         if newscope:
             s = Scope(self._voicethings, self)
@@ -243,6 +265,12 @@ class Scope:
 
         if not isinstance(parameters, list):
             return parameters
+
+        if not parameters:
+            return None
+
+        if parameters[0] is None:
+            return self.resolve(parameters[1:], False)
 
         if len(parameters) == 0:
             return None
@@ -255,19 +283,24 @@ class Scope:
             # we reconstruct the list replacing the first element with x and call resolve again
             return self.resolve([x, *parameters[1:]], True)
 
+        if isinstance(parameters[0], LiretaString):
+            if len(parameters) == 1:
+                return parameters[0]
+            return self.resolve(["string"] + parameters, False)
+
         if isinstance(parameters[0], str):
             # if it is a string, it can be either a keyword or a note name
 
             # checking if it is a note
             if (f := self.notetofreq(parameters[0])) is not None:
                 # if it is, we adjust the parameters for a "note" call, and then call it
-                parameters = self.flat(parameters)
+                parameters = flat(parameters)
                 return self.resolve(["note", f"{f}Hz", *parameters[1:]], False)
 
             # checking if it is a keyword
             for keyword in self._voicethings._keywords:
                 if keyword.name == parameters[0]:
-                    parameters = self.flat(parameters)
+                    parameters = flat(parameters)
                     return keyword.fn(self, parameters[1:])
 
             # if it wasn't a note name nor a string, it's invalid syntax
@@ -304,20 +337,11 @@ class Scope:
             # if it is a list (and we have not used `list` in `types`), we need to keep processing
             return self.solveuntil(self.resolve(parameters, True), types)
 
-    def flat(self, l: list):
-        """Removes empty sublists and None from a list, and unfolds some nested lists"""
-        if not isinstance(l, list):
-            return l
-        k = []
-        for item in l:
-            if isinstance(item, list):
-                if len(item) == 1:
-                    item = item[0]
-                if v := self.flat(item):
-                    if not isinstance(v, list):
-                        k.append([v])
-                    else:
-                        k.append(v)
-            elif item is not None:
-                k.append(item)
-        return k
+    @property
+    def tree(self):
+        u = ""
+        s = self
+        while s is not None:
+            u += str(s).rstrip(">").lstrip("<base.Scope object at 0x") + "\n"
+            s = s._base
+        return u

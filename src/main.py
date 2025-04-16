@@ -7,7 +7,7 @@ from jsonparse import processjson
 from audiowave import AudioWave
 
 
-def lireta(path_in: str) -> AudioWave:
+def lireta(path_in: str) -> AudioWave | None:
     content, config = lex(path_in)
 
     user_keywords, user_instruments = ([], {}) if not config else processjson(config)
@@ -20,9 +20,8 @@ def lireta(path_in: str) -> AudioWave:
     voice_items = VoiceThings(keywords, instruments)
     root_scope = Scope(voice_items)
 
-    if (audio := root_scope.resolve(content, False)) is not None:
+    if isinstance(audio := root_scope.resolve(content, False), AudioWave):
         return audio
-    raise TypeError("Lireta script does not evaluate to an audio.")
 
 
 if __name__ == "__main__":
@@ -30,26 +29,29 @@ if __name__ == "__main__":
     from sys import argv, exit
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Produces audio based on a .lireta file. If no output path is provided, simply plays it, otherwise exports it. "
-    )
+    # parser = argparse.ArgumentParser(
+    #     description="Produces audio based on a .lireta file. If no output path is provided, simply plays it, otherwise exports it. "
+    # )
 
-    parser.add_argument("input", help="Input file path")
-    parser.add_argument("--output", "-o", help="Output file path", default=None)
-    parser.add_argument(
-        "--play",
-        "-p",
-        help="Play the audio even if an output file is provided",
-        action="store_true",
-    )
+    # parser.add_argument("input", help="Input file path")
+    # parser.add_argument("--output", "-o", help="Output file path", default=None)
+    # parser.add_argument(
+    #     "--play",
+    #     "-p",
+    #     help="Play the audio even if an output file is provided",
+    #     action="store_true",
+    # )
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
-    audio = lireta(args.input)
-
-    if args.output is None:
-        audio.play()
+    # audio = lireta(args.input)
+    audio = lireta("docs/example.lireta")
+    if audio is None:
         exit()
-    elif args.play:
-        audio.play()
-    audio.export_wav(args.output)
+
+    # if args.output is None:
+    #     audio.play()
+    #     exit()
+    # elif args.play:
+    #     audio.play()
+    # audio.export_wav(args.output)

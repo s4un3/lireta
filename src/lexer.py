@@ -1,3 +1,6 @@
+from base import LiretaString
+
+
 def lex(path: str) -> tuple[list, str]:
     def _preprocess(s: str) -> tuple[list, int, str]:
         processed = []
@@ -101,7 +104,7 @@ def lex(path: str) -> tuple[list, str]:
                         if word.endswith("\\"):
                             word = word[:-1]
                         elif word:
-                            line.append(word)
+                            line.append(LiretaString(word))
                             word = ""
                             state = 0
                             continue
