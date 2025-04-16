@@ -1,14 +1,18 @@
-[tool.poetry]
+[project]
 name = "lireta"
 version = "0.1.0"
+requires-python = "^3.13"
 description = "A project to render simple music"
-authors = ["Pedro H. Sauné <pedrohsaune@gmail.com>"]
+authors = [{name="Pedro H. Sauné", email="<pedrohsaune@gmail.com>"}]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.13"
+dynamic = ["dependencies"]
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+numpy = "^2.2.4"
+scipy = "^1.15.2"
+sounddevice = "^0.5.1"
