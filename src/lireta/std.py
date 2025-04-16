@@ -2,7 +2,7 @@ from instrument import Instrument
 from base import Keyword, Scope, to_flt, LiretaString, Block, Line
 from audiowave import AudioWave
 import numpy as np
-from process import expect
+from process import expect, process
 
 
 class KWseq(Keyword):
@@ -42,9 +42,7 @@ class KWnote(Keyword):
         if (freq := scope.notetofreq(notename)) is None:
             raise ValueError(f"'{notename}' is not a valid note name.")
         instr = scope._common._instruments[scope.read("instrument")]
-        return AudioWave().new(
-            time, freq, to_flt(scope.read("intensity")), instr.waveform(freq)
-        )
+        return scope._common.note(time, freq, to_flt(scope.read("intensity")), instr)
 
 
 class KWsimult(Keyword):

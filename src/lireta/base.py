@@ -53,7 +53,6 @@ class Keyword:
         pass
 
 
-@dataclass
 class Common:
     """Class used to store common data between all scopes that should not be changed by keywords"""
 
@@ -62,6 +61,30 @@ class Common:
     ):
         self._keywords = [k() for k in keywords]
         self._instruments = {name: instruments[name]() for name in instruments}
+        self._notecache = {}
+
+    def note(
+        self, duration: float, frequency: float, amplitude: float, instr: Instrument
+    ):
+        """Manages note cacheing"""
+
+        if any([not isinstance(p, float) for p in [duration, frequency, amplitude]]):
+            raise TypeError("Expected parameters as `float`.")
+
+        if not isinstance(instr, Instrument):
+            raise TypeError("Parameter `instr` must be an instrument.")
+
+        key = (duration, frequency, amplitude, instr._name)
+
+        if key in self._notecache:
+            return self._notecache[key]
+
+        else:
+            audio = AudioWave().new(
+                duration, frequency, amplitude, instr.waveform(frequency)
+            )
+            self._notecache[key] = audio
+            return audio
 
 
 class Scope:
