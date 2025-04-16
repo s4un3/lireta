@@ -1,7 +1,7 @@
 from base import LiretaString, Block, Line
 
 
-def lex(path: str) -> tuple[list, str]:
+def lex(path: str) -> tuple[Block, str]:
     def _preprocess(s: str) -> tuple[list, int, str]:
         processed = []
         config = ""
@@ -123,4 +123,4 @@ def lex(path: str) -> tuple[list, str]:
         return (processed, i, config)
 
     content, _, configpath = _preprocess(open(path, "r").read())
-    return (content, configpath)
+    return (Block(content), configpath)

@@ -17,25 +17,6 @@ def to_flt(s: str):
         return float(s)
 
 
-def flat(l: list):
-    """Removes empty sublists and None from a list, and unfolds some nested lists"""
-    if not isinstance(l, list):
-        return l
-    k = []
-    for item in l:
-        if isinstance(item, list):
-            if len(item) == 1:
-                item = flat(item[0])
-            if v := flat(item):
-                if not isinstance(v, list):
-                    k.append([v])
-                else:
-                    k.append(v)
-        elif item is not None:
-            k.append(item)
-    return k
-
-
 class LiretaString:
     def __init__(self, value: str):
         self.value = str(value)
@@ -51,9 +32,6 @@ class Block:
     def __init__(self, value: list):
         self.value = list(value)
 
-    def __list__(self) -> list:
-        return self.value
-
     def __repr__(self) -> str:
         return "Block" + str(list(self.value))
 
@@ -61,9 +39,6 @@ class Block:
 class Line:
     def __init__(self, value: list):
         self.value = list(value)
-
-    def __list__(self) -> list:
-        return self.value
 
     def __repr__(self) -> str:
         return "Line" + str(list(self.value))
@@ -73,12 +48,9 @@ class Keyword:
     """Base class for keywords"""
 
     name: str
-    # what string triggers the keyword
 
-    def fn(self, scope: Scope, block: Block) -> Any:
+    def fn(self, scope: Scope, params: list) -> Any:
         pass
-
-    # first parameter: scope that called it
 
 
 @dataclass
@@ -102,12 +74,12 @@ class Scope:
             self._base is None
         ):  # if it is a "root" scope, fill the default built in values
             self._vars = {
-                "octave": 4,
-                "tuning": 440,
-                "bpm": 120,
-                "duration": 1,
+                "octave": "4",
+                "tuning": "440",
+                "bpm": "120",
+                "duration": "1",
                 "instrument": "sin",
-                "intensity": 1,
+                "intensity": "1",
             }
         else:
             # if it is not a root scope, it does not have any initial local variables
@@ -135,16 +107,10 @@ class Scope:
         else:
             return self._base._find(key)
 
-    def declare(self, key: str, value, upscope: bool = False):
+    def declare(self, key: str, value):
         """Creates a local entry in the upper scope"""
 
-        s = self
-        # needs to go to the upper scope due to `Scope.resolve` and `lex` understanding a line as a new scope
-        if s._base is not None:
-            s = s._base
-        if upscope and s._base is not None:
-            s = s._base
-        s._vars[key] = value
+        self._vars[key] = value
 
     def assign(self, key: str, value):
         """Tries to assign a key in the scope and its parents to a value"""
