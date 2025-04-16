@@ -2,7 +2,7 @@ from instrument import Instrument
 from base import Keyword, Scope, to_flt, LiretaString, Block, Line
 from audiowave import AudioWave
 import numpy as np
-from process import expect
+from process import expect, process
 
 
 class KWseq(Keyword):
