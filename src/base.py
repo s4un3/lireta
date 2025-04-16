@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, Union, Callable, Self
 import re
 from dataclasses import dataclass
@@ -24,7 +25,9 @@ class Keyword:
     name: str
     # what string triggers the keyword
 
-    fn: Callable
+    def fn(self, scope: Scope, params: list) -> Any:
+        pass
+
     # first parameter: scope that called it
 
 

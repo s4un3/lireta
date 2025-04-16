@@ -187,7 +187,7 @@ class KWfunc(Keyword):
                 declarations = []
                 for i in range(len(fargs)):
                     declarations.append(["var", fargs[i], ":=", args[i]])
-                return s.resolve(declarations + block, True)
+                return s.flat(s.resolve(declarations + block, True))
 
         else:
             if ":=" in params:
@@ -212,17 +212,17 @@ class KWdot(Keyword):
                 scope.resolve(item, False)
 
 
-class KWliteral(Keyword):
-    name = "literal"
+class KWstring(Keyword):
+    name = "string"
 
     def fn(self, scope: Scope, params: list):
-        ret = []
+        ret = ""
         for item in params:
             if isinstance(item, list):
-                item = scope.resolve(item, True)
+                item = scope.solveuntil(item, [str])
             if item is None:
                 continue
-            ret.append(item)
+            ret += str(item)
         return ret
 
 
@@ -257,6 +257,6 @@ available_keywords = [
     KWrepeat,
     KWfunc,
     KWdot,
-    KWliteral,
+    KWstring,
 ]
 available_instruments = [Sin, Square, Saw]
