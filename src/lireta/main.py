@@ -6,7 +6,6 @@ from jsonparse import processjson
 from audiowave import AudioWave
 from process import process
 from std import available_keywords, available_instruments
-from process import process
 
 
 def lireta(path_in: str) -> AudioWave | None:
