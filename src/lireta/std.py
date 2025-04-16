@@ -121,8 +121,7 @@ class KWsfx(Keyword):
             raise ValueError(
                 "Instrument must be pitchless in order to be used as an effect."
             )
-        track = instrument._tracks[0]
-        freq = track._freq
+        freq = instrument._tracks[0]._freq
 
         if len(params) == 2:
             time = to_flt(str(expect(scope, params[1], [str, LiretaString])))
@@ -134,7 +133,9 @@ class KWsfx(Keyword):
             time = to_flt(scope.read("duration"))
         time *= 60 / to_flt(scope.read("bpm"))
 
-        return AudioWave().new(time, freq, waveform=track._as_callable())
+        return scope._common.note(
+            time, freq, to_flt(scope.read("intensity")), instrument
+        )
 
 
 class KWrepeat(Keyword):
