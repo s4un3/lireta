@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "detachhead.basedpyright",
+        "fill-labs.dependi",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "charliermarsh.ruff"
+    ]
+}
