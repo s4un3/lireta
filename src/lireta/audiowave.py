@@ -169,3 +169,12 @@ class AudioWave:
         scaled_wave = np.int16(np.array(aux._wave) * 32767)  # scale to 16-bit PCM
         wavfile.write(filename, aux._samplerate, scaled_wave)
         return self
+
+    def amplitude_effect(self, f: Callable[[float | int], float | int]):
+        """Applies an effect to the amplitude according to the proportion in duration with the full audio.
+
+        For example, `lambda t: t` will make the audio start muted and end identical to the original.
+        """
+        k = len(self._wave)
+        self._wave = [self._wave[i] * f(i / k) for i in range(k)]
+        return self
