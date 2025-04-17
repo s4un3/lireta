@@ -1,4 +1,4 @@
-from base import LiretaString, Block, Line
+from .base import LiretaString, Block, Line
 
 
 def lex(path: str) -> tuple[Block, str]:
@@ -16,7 +16,6 @@ def lex(path: str) -> tuple[Block, str]:
             char = s[i - 1]
 
             match state:
-
                 case 0:
                     # "normal" state
 

@@ -3,8 +3,8 @@ from typing import Any, Union, Callable, Self
 import re
 from dataclasses import dataclass
 
-from audiowave import AudioWave
-from instrument import Instrument
+from .audiowave import AudioWave
+from .instrument import Instrument
 
 Num = Union[float, int]
 
