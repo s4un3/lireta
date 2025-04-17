@@ -29,8 +29,9 @@ class LiretaString:
 
 
 class Block:
-    def __init__(self, value: list):
+    def __init__(self, value: list, prevent_new_scope: bool = False):
         self.value = list(value)
+        self._prevent_new_scope = prevent_new_scope
 
     def __repr__(self) -> str:
         return "Block" + str(list(self.value))

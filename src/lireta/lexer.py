@@ -123,4 +123,4 @@ def lex(path: str) -> tuple[Block, str]:
         return (processed, i, config)
 
     content, _, configpath = _preprocess(open(path, "r").read())
-    return (Block(content), configpath)
+    return (Block(content, True), configpath)

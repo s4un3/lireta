@@ -8,7 +8,9 @@ from process import expect, process
 class KWseq(Keyword):
     name = "seq"
 
-    def fn(self, scope: Scope, params: list):
+    def fn(
+        self, scope: Scope, params: list
+    ) -> None | Block | LiretaString | str | AudioWave:
         w = AudioWave()
         changed = False
         for item in params:
