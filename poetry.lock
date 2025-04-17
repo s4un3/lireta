@@ -244,5 +244,5 @@ numpy = ["NumPy"]
 
 [metadata]
 lock-version = "2.1"
-python-versions = "^3.13"
-content-hash = "d08687b151342692762f45108e37111b650cc490a950fddd984e89a99db3a212"
+python-versions = "~=3.13"
+content-hash = "d45fe0a31f9e0929c4b1d76d491339806474732db24568bc35318d5554d1aa57"
