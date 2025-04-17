@@ -108,7 +108,9 @@ class KWprint(Keyword):
         for param in params:
             if param is None:
                 continue
-            print(end=_format(str(expect(scope, param, [str, LiretaString]))))
+            print(
+                end=_format(str(expect(scope, param, [str, LiretaString]))), flush=True
+            )
 
 
 class KWsfx(Keyword):
@@ -147,7 +149,7 @@ class KWrepeat(Keyword):
                 "Number of parameters is incorrect for 'repeat'. It mush have at least 1 parameter."
             )
         repetitions = int(str(expect(scope, params[0], [str, LiretaString])))
-        return [list(params[1:])] * repetitions
+        return Block([Line(list(params[1:]))] * repetitions)
 
 
 class KWfunc(Keyword):
