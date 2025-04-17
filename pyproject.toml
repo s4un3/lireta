@@ -3,10 +3,11 @@ name = "lireta"
 version = "0.1.0"
 requires-python = "^3.13"
 description = "A project to render simple music"
-authors = [{name="Pedro H. Sauné", email="<pedrohsaune@gmail.com>"}]
+authors = [{ name = "Pedro H. Sauné", email = "<pedrohsaune@gmail.com>" }]
 readme = "README.md"
 dynamic = ["dependencies"]
-
+license = "LGPL-3.0"
+license-files = ["LICENSE.md"]
 
 [build-system]
 requires = ["poetry-core"]
