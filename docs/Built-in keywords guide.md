@@ -1,5 +1,7 @@
 # Lireta keywords
 
+This document explains the syntax of the built-in keywords of lireta, alongside some examples.
+
 ## `seq`
 
 ### Usage
@@ -252,7 +254,7 @@ var x := {.;};
 string [...];
 ```
 
-Transforms parameters into strings, as long as they are compatible (for example, not audio, not functions).
+Transforms parameters into strings, as long as they are compatible (for example, not audio, not functions), and concatenates if there are multiple parameters.
 
 ## Examples
 
