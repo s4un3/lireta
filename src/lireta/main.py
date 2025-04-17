@@ -25,8 +25,7 @@ def lireta(path_in: str) -> AudioWave | None:
         return audio
 
 
-if __name__ == "__main__":
-
+def main():
     from sys import argv, exit
     import argparse
 
@@ -55,3 +54,7 @@ if __name__ == "__main__":
     elif args.play:
         audio.play()
     audio.export_wav(args.output)
+
+
+if __name__ == "__main__":
+    main()
