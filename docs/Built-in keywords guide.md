@@ -251,11 +251,6 @@ func getx := {.;};
 	func getx = {var x;};
 
 	func ! store : u = {
-
-	    var value := {
-	       var {var u;};
-	    };
-
         func _setx : {var {var u;};};
 	};
 };
