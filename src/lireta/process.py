@@ -36,11 +36,8 @@ def process(x: Block, scope: Scope):
 
     lines = x.value
 
-    while isinstance(lines[0], Block):
-        s = scope if lines[0]._prevent_new_scope else scope.child()
-        lines[0] = process(lines[0], s)
-
     results = []
+
     for line in lines:
 
         if not isinstance(line, Line):
@@ -69,7 +66,11 @@ def process(x: Block, scope: Scope):
             return None
 
         # it's neither a block nor a string, so the result can be returned directly
-        if not isinstance(line, str) and not isinstance(line, Block) and len(line) == 1:
+        if (
+            (not isinstance(line[0], str))
+            and (not isinstance(line[0], Block))
+            and len(line) == 1
+        ):
             return line[0]
 
         if isinstance(line[0], Block):
@@ -97,13 +98,16 @@ def process(x: Block, scope: Scope):
                         break
                 if notfound:
                     raise ValueError(f"'{line[0]}' is not a note name nor a keyword")
+
+        if isinstance(line, list):
+            line = process(Block([Line(line)]), scope)
+
+        # in case `line` is still a block
+        while isinstance(line, Block):
+            s = scope if line._prevent_new_scope else scope.child()
+            line = process(line, s)
+
         if line is not None:
-
-            # in case `line` is still a block
-            while isinstance(line, Block):
-                s = scope if line._prevent_new_scope else scope.child()
-                line = process(line, s)
-
             results.append(line)
 
     compatible_types = {str: 0, LiretaString: 0, AudioWave: 1}
