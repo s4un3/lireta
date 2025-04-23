@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Lireta example",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src/",
+            "module": "lireta",
+            "justMyCode": false,
+            "args": [
+                "${workspaceFolder}/docs/example.lireta",
+            ],
+            "console": "integratedTerminal",
+        }
+    ]
+}

@@ -2,8 +2,8 @@ import json
 import importlib.util
 import sys
 import os
-from instrument import Track, Instrument
-from base import Keyword
+from .instrument import Track, Instrument
+from .base import Keyword
 
 
 def processjson(
@@ -37,7 +37,6 @@ def processjson(
             raise TypeError("'scripts' must be a list")
         # python files that implement custom keywords or instruments
         for script_path in data["scripts"]:
-
             spec = importlib.util.spec_from_file_location("userscript", script_path)
 
             if spec is None:

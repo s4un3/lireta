@@ -1,8 +1,7 @@
-from base import *
+from .base import *
 
 
 def expect(scope: Scope, x, types: list[type | None]):
-
     # if it is a block, process it
     if isinstance(x, Block):
         x = process(x, scope.child())
@@ -13,7 +12,6 @@ def expect(scope: Scope, x, types: list[type | None]):
 
     matched = False
     for t in types:
-
         if t is None:
             if x is None:
                 matched = True
@@ -40,7 +38,6 @@ def process(x: Block, scope: Scope):
 
     results = []
     for line in lines:
-
         if not isinstance(line, Line):
             raise TypeError("Element is not a Line")
 
@@ -50,7 +47,6 @@ def process(x: Block, scope: Scope):
 
         # check for invalid entries in `contents` and clear out None
         for word in contents:
-
             if word is None:
                 continue
 
@@ -91,7 +87,6 @@ def process(x: Block, scope: Scope):
                 if notfound:
                     raise ValueError(f"'{line[0]}' is not a note name nor a keyword")
         if line is not None:
-
             # in case `line` is still a block
             while isinstance(line, Block):
                 line = process(line, scope.child())
