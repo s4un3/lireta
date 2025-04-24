@@ -8,7 +8,9 @@ from .process import expect, process
 class KWseq(Keyword):
     name = "seq"
 
-    def fn(self, scope: Scope, params: list):
+    def fn(
+        self, scope: Scope, params: list
+    ) -> None | Block | LiretaString | str | AudioWave:
         w = AudioWave()
         changed = False
         for item in params:
@@ -155,6 +157,14 @@ class KWfunc(Keyword):
     name = "func"
 
     def fn(self, scope: Scope, params: list):
+
+        # detect unclean functions and set `k` to store the current scope for clean functions
+        if ("=" in params or ":=" in params) and params[0] == "!":
+            params = params[1:]
+            k = None
+        else:
+            k = scope
+
         if ":" in params:
             if "=" in params or ":=" in params:
                 if params[1] != ":":
@@ -167,14 +177,18 @@ class KWfunc(Keyword):
                     args.append(param)
                     i += 1
                 if ":=" in params:
-                    scope.declare(params[0], (args, params[i:], scope))
+                    scope.declare(params[0], (args, params[i], k))
                 else:
-                    scope.assign(params[0], (args, params[i:], scope))
+                    scope.assign(params[0], (args, params[i], k))
             else:
                 fargs, block, s = scope.read(params[0])
-                block: list[Block]
-                s: Scope
+                s: Scope | None
                 args = params[2:]
+
+                for i in range(len(args)):
+                    while isinstance(args[i], Block):
+                        args[i] = process(args[i], scope)
+
                 if len(fargs) != len(args):
                     raise SyntaxError(
                         f"Function '{params[0]}' expects {len(fargs)} parameters and {len(args)} were used."
@@ -182,23 +196,27 @@ class KWfunc(Keyword):
                 declarations = []
                 for i in range(len(fargs)):
                     declarations.append(Line(["var", fargs[i], ":=", args[i]]))
-                for j in block:
-                    declarations.append(Line([j]))
-                return Block(declarations)
+
+                declarations.append(Line([block]))
+                b = Block(declarations)
+
+                return b if s is None else process(b, s)
 
         else:
             if ":=" in params:
-                scope.declare(params[0], ([], params[2], scope))
+                scope.declare(params[0], ([], params[2], k))
 
             elif "=" in params:
-                scope.assign(params[0], ([], params[2], scope))
+                scope.assign(params[0], ([], params[2], k))
             else:
                 args, block, s = scope.read(params[0])
+                block: Block
+                s: Scope | None
                 if len(args):
                     raise SyntaxError(
                         f"Function '{params[0]}' expects {len(args)} parameters"
                     )
-                return block
+                return block if s is None else process(block, s)
 
 
 class KWdot(Keyword):

@@ -4,7 +4,8 @@ from .base import *
 def expect(scope: Scope, x, types: list[type | None]):
     # if it is a block, process it
     if isinstance(x, Block):
-        x = process(x, scope.child())
+        s = scope if x._prevent_new_scope else scope.child()
+        x = process(x, s)
 
     # it is not a block, but an unexpected string that might be a keyword
     elif isinstance(x, str) and str not in types:
@@ -33,10 +34,8 @@ def process(x: Block, scope: Scope):
 
     lines = x.value
 
-    while isinstance(lines[0], Block):
-        lines[0] = process(lines[0], scope.child())
-
     results = []
+
     for line in lines:
         if not isinstance(line, Line):
             raise TypeError("Element is not a Line")
@@ -62,8 +61,17 @@ def process(x: Block, scope: Scope):
         if len(line) == 0:
             return None
 
+        # it's neither a block nor a string, so the result can be returned directly
+        if (
+            (not isinstance(line[0], str))
+            and (not isinstance(line[0], Block))
+            and len(line) == 1
+        ):
+            return line[0]
+
         if isinstance(line[0], Block):
-            line[0] = process(line[0], scope.child())
+            s = scope if line[0]._prevent_new_scope else scope.child()
+            line[0] = process(line[0], s)
 
         if isinstance(line[0], AudioWave):
             seq_command = Block([Line(["seq"] + line)])
@@ -86,11 +94,16 @@ def process(x: Block, scope: Scope):
                         break
                 if notfound:
                     raise ValueError(f"'{line[0]}' is not a note name nor a keyword")
-        if line is not None:
-            # in case `line` is still a block
-            while isinstance(line, Block):
-                line = process(line, scope.child())
 
+        if isinstance(line, list):
+            line = process(Block([Line(line)]), scope)
+
+        # in case `line` is still a block
+        while isinstance(line, Block):
+            s = scope if line._prevent_new_scope else scope.child()
+            line = process(line, s)
+
+        if line is not None:
             results.append(line)
 
     compatible_types = {str: 0, LiretaString: 0, AudioWave: 1}

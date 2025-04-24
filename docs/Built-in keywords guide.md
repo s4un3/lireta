@@ -146,12 +146,12 @@ repeat 3 {
 Usage:
 
 ```
-func f; # 1
-func f : ...; # 2
-func f = {...}; # 3
-func f := {...}; # 4
-func f : ... = {...}; # 5
-func f : ... := {...}; # 6
+func (!) f; # 1
+func (!) f : ...; # 2
+func (!) f = {...}; # 3
+func (!) f := {...}; # 4
+func (!) f : ... = {...}; # 5
+func (!) f : ... := {...}; # 6
 ```
 
 (1) Calls the function without any parameters.
@@ -165,6 +165,8 @@ func f : ... := {...}; # 6
 (5) Assigns a new function (with parameters) to an existing function.
 
 (6) Declares a function (with parameters).
+
+The parameter `!` denotes that the function is "unclean", meaning it executes on the calling scope, not in the original one.
 
 ### Examples
 
@@ -204,7 +206,7 @@ Similarly, functions that depend on variables outside their own scope can have t
 
 ```
 var t := 0;
-func h : v := {
+func ! h : v := {
 	note {var v;} {var t;}; # uses t=0
 };
 var t = 4; # now h uses t=4
@@ -217,13 +219,53 @@ func f := {.;};
 
 {
 	# x was not even declared until now
-	func f = {
+	func ! f = {
 		print {var x;};
 	};
 };
 
 var x := 10;
 func f; # will still be able to reach x=10
+```
+
+On the difference between clean and unclean functions, as mentioned before, unclean functions are executed in the calling scope, or more accuratelly, on a child of the calling scope, while clean functions are executed in a child of the declaring/assigning scope.
+
+If a function needs to modify or read a variable that is not in the parameters but in the assigning scope, it should be a clean function, while if it operates closer to a macro, needing to modify or read from the calling scope, it should be a unclean function.
+
+As the name suggest, avoid using unclean functions.
+
+When a function could have mixed behaviour, an unclean wrapper that calls the clean and parts can be constructed:
+
+```
+func store := {.;};
+func _setx := {.;};
+func getx := {.;};
+
+{
+	var x := 0;
+
+	func _setx : v = {
+	    var x = {var v;};
+	};
+
+	func getx = {var x;};
+
+	func ! store : u = {
+        func _setx : {var {var u;};};
+	};
+};
+
+# x remains unaccessible here
+
+var k := 10;
+
+func store_ptr : k; # sets x to the value of k
+print {func getx;} "\n"; # access 10
+
+var k = 5;
+
+func store : k;
+print {func getx;} "\n"; # access 5
 ```
 
 ## `.`
@@ -236,15 +278,10 @@ func f; # will still be able to reach x=10
 
 Executes the block(s) ignoring their return(s).
 
-It is also useful for setting variables or functions without assigning an actual value.
-
 ### Examples
 
 ```
 . {func f;};
-
-var x := {.;};
-```
 
 ## `string`
 
