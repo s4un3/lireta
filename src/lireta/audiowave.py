@@ -1,34 +1,62 @@
-import numpy as np
-from typing import Callable, Union, Self
-import sounddevice as sd
-import scipy.io.wavfile as wavfile
 
-Num = Union[float, int]
-FuncOrNum = Union[Num, Callable[[Num], Num]]
+"""Module for the AudioWave class."""
+from collections.abc import Callable
+from typing import Self
+
+import numpy as np
+import scipy.io.wavfile as wavfile
+import sounddevice as sd
+
+Num = float | int
+FuncOrNum = Num | Callable[[Num], Num]
 
 
 class AudioWave:
-    """Class responsible for "raw" audio manipulation"""
+    """Class responsible for "raw" audio manipulation.
+    
+    Most methods return `self` for convenience.
+    """
 
     def __init__(self):
+        """Create an empty AudioWave."""
         self._wave: list[float]
         self._samplerate: int
         self._voicecount: int
-        # _voicecount is responsible for storing how many audio tracks have been added
-        # it ensures the result when exporting or playing does not become clipped due to many tracks being added
-        # also makes addition associative
 
-        self.clear()
+        # _voicecount is responsible for storing how many audio tracks have been added
+        
+        # it ensures the result when exporting or playing does not become clipped due
+        # to many tracks being added, and makes addition associative
+
+        _ = self.clear()
 
     def clear(self):
+        """Clear the fields, except for `_samplerate`.
+        
+        Returns:
+        self
+
+        """
         self._wave = []
         self._voicecount = 0
 
         return self
 
     def _sampleratefix(self, other: Self):
-        """Tries to adapt the samplerate of an empty AudioWave for an operation, and raises an error if they are incompatible"""
+        """Try to adapt the samplerate of an empty AudioWave.
 
+        Used for operations between two AudioWaves.
+
+        If `_voicecount` is 0, the data is considered empty 
+        and the samplerate of the empty AudioWave is set to the non-empty one.
+
+        Args:
+        other(Self): the other AudioWave
+
+        Raises:
+        ValueError: Both instances are not empty and their samplerates don't match.
+
+        """
         if other._voicecount == 0:
             other._samplerate = self._samplerate
         elif self._voicecount == 0:
@@ -41,18 +69,38 @@ class AudioWave:
         duration: float,
         frequency: FuncOrNum,
         amplitude: FuncOrNum = 1,
-        waveform: Callable[[float], float] = lambda t: np.sin(2 * np.pi * t),
+        waveform: Callable[[float], float] = lambda t: np.sin(2 * np.pi * t),  # pyright: ignore[reportAny]
         samplerate: int = 44100,
     ):
+        """Fill the wave with actual audio.
 
-        _amplitude = lambda t: amplitude(t) if callable(amplitude) else amplitude
+        Args:
+        duration(float): duration of the audio, in seconds.
+        frequency(FuncOrNum): the frequency.
+        amplitude(FuncOrNum): the amplitude (loudness).
+        waveform(Callable[[float], float]): the timbre.
+        samplerate(int): how many samples of audio should be generated for each second.
+
+        Returns:
+        self
+
+        """
+
+        def _amplitude(t: Num):
+            return amplitude(t) if callable(amplitude) else amplitude
 
         self._samplerate = samplerate
         self._wave = []
         self._voicecount = 1
+
         if not callable(frequency):
-            # if the frequency is constant, the integral of the angular velocity boils down to a simple multiplication
-            # this is similar to the common sin(ωt+φ), but here we don't need to worry about φ and we assume the waveform has frequency of 1, so ω=frequency
+
+            # if the frequency is constant, the integral of the angular velocity 
+            # boils down to a simple multiplication
+
+            # this is similar to the common sin(ωt+φ), but here we don't need to worry
+            # about φ and we assume the waveform has frequency of 1, so ω=frequency
+
             self._wave = [
                 _amplitude(t / samplerate) * waveform(frequency * t / samplerate)
                 for t in range(int(duration * samplerate))
@@ -78,15 +126,30 @@ class AudioWave:
         return self
 
     def scale(self, k: float):
-        """Modifies the wave in place by amplifying (or deamplifying) by a factor k
+        """Modify the wave in place by amplifying (or deamplifying) by a factor k.
 
-        May cause clipping for k > 1 (or k < -1 if you are doing that for some reason)
+        May cause clipping for k > 1 (or k < -1 if you are doing that for some reason).
+
+        Args:
+        k(float): the scaling factor.
+
+        Returns:
+        self
+
+        See Also:
+        AudioWave.__mul__
+
         """
-
         self._wave = [i * k for i in self._wave]
         return self
 
     def copy(self):
+        """Create a copy of this AudioWave.
+        
+        Returns:
+        self
+        
+        """
         ans = AudioWave()
         ans._wave = self._wave.copy()
         ans._samplerate = self._samplerate
@@ -94,15 +157,40 @@ class AudioWave:
         return ans
 
     def __mul__(self, k: float):
-        """Similar to `scale`, but operates on a copy"""
+        """Create a new AudioWave and amplify (or deamplify) by a factor k.
 
+        May cause clipping for k > 1 (or k < -1 if you are doing that for some reason).
+
+        Args:
+        k(float): the scaling factor.
+
+        Returns:
+        self
+
+        See Also:
+        AudioWave.scale
+
+        
+        """
         ans = self.copy()
-        ans.scale(k)
+        _ = ans.scale(k)
         return ans
 
     def __add__(self, other: Self):
-        """Creates an audio track that sounds as if both tracks would be played at the same time, by adding element-wise"""
+        """Create an AudioWave that sounds as if both would be played at the same time.
+        
+        It achieves this by adding the `_wave` lists element-wise.
 
+        Args:
+        other(Self): the other wave.
+        
+        Returns:
+        self
+
+        See Also:
+        AudioWave.mix
+        
+        """
         self._sampleratefix(other)
 
         ans = AudioWave()
@@ -120,11 +208,23 @@ class AudioWave:
         return ans
 
     def mix(self, other: Self):
-        """Similar to `__add__` but assigns the result to `self`
+        """Modify the wave to sound as if both would be played at the same time.
+        
+        It achieves this by adding the `_wave` lists element-wise.
 
-        It's implemented for the sake of completion and symmetry with the other operations, like `__mul__` vs `scale`, `append` vs `__gt__`
+        It's implemented for the sake of completion and symmetry with the other
+        operations, like `__mul__` vs `scale`, `append` vs `__gt__`.
+
+        Args:
+        other(Self): the other wave.
+        
+        Returns:
+        self
+
+        See Also:
+        AudioWave.__add__
+
         """
-
         aux = self + other
         self._wave = aux._wave
         self._samplerate = aux._samplerate
@@ -134,47 +234,76 @@ class AudioWave:
     def append(
         self, other: Self, newvoicecount: Callable[[int, int], int] = lambda _, __: 1
     ):
-        """Puts an audio at the end of this track"""
+        """Put an audio at the end of this track.
+        
+        Args:
+        other(Self): the other wave.
+        newvoicecount(Callable[[int, int], int]): what should be the new voicecount.
+
+        Returns:
+        self
+
+        See Also:
+        AudioWave.__gt__
+        
+        """
         self._sampleratefix(other)
 
         if self._voicecount != 0:
-            self.scale(1 / self._voicecount)
+            _ = self.scale(1 / self._voicecount)
         aux = other.copy()
         if aux._voicecount != 0:
-            aux.scale(1 / aux._voicecount)
+            _ = aux.scale(1 / aux._voicecount)
         self._wave.extend(aux._wave)
         self._voicecount = newvoicecount(self._voicecount, other._voicecount)
 
-    def __gt__(self, other):
-        """Similar to `append` but operates in a copy
+        return self
 
-        Since comparisons aren't really useful for this class, the `<` and `>` symbols have been appropriated for this
+    def __gt__(
+        self, other: Self, newvoicecount: Callable[[int, int], int] = lambda _, __: 1
+    ):
+        """Create a new wave as a sequence of sounds.
+
+        Since comparisons aren't really useful for this class, the `<` and `>` symbols
+        have been appropriated for this new purpose.
+
+        Args:
+        other(Self): the other wave.
+        newvoicecount(Callable[[int, int], int]): what should be the new voicecount.
+
+        Returns:
+        self
+
+        See Also:
+        AudioWave.append
+
         """
-
         ans = self.copy()
-        ans.append(other)
+        _ = ans.append(other, newvoicecount)
         return ans
 
     def play(self):
-        """Plays the audio track and waits for its end"""
-
-        sd.play((self * (1 / self._voicecount))._wave, self._samplerate)
+        """Play the audio track and wait for its end.
+        
+        Returns:
+        self
+        
+        """
+        sd.play((self * (1 / self._voicecount))._wave, self._samplerate)  # pyright: ignore[reportUnknownMemberType]
         sd.wait()
         return self
 
     def export_wav(self, filename: str):
-        """Create a wav file with the contents of the audio track"""
+        """Create a wav file with the contents of the audio track.
+        
+        Args:
+        filename(str): the name of the file.
 
+        Returns:
+        self
+        
+        """
         aux = self * (1 / self._voicecount)
         scaled_wave = np.int16(np.array(aux._wave) * 32767)  # scale to 16-bit PCM
-        wavfile.write(filename, aux._samplerate, scaled_wave)
-        return self
-
-    def amplitude_effect(self, f: Callable[[float | int], float | int]):
-        """Applies an effect to the amplitude according to the proportion in duration with the full audio.
-
-        For example, `lambda t: t` will make the audio start muted and end identical to the original.
-        """
-        k = len(self._wave)
-        self._wave = [self._wave[i] * f(i / k) for i in range(k)]
+        wavfile.write(filename, aux._samplerate, scaled_wave)  # pyright: ignore[reportUnknownMemberType]
         return self
