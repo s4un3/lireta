@@ -1,8 +1,8 @@
-from instrument import Instrument
-from base import Keyword, Scope, to_flt, LiretaString, Block, Line
-from audiowave import AudioWave
+from .instrument import Instrument
+from .base import Keyword, Scope, to_flt, LiretaString, Block, Line
+from .audiowave import AudioWave
 import numpy as np
-from process import expect, process
+from .process import expect, process
 
 
 class KWseq(Keyword):
@@ -99,7 +99,6 @@ class KWprint(Keyword):
     name = "print"
 
     def fn(self, scope: Scope, params: list):
-
         def _format(s: str):
             replacements = {r"\n": "\n", r"\t": "\t", r"\b": "\b", r"\r": "\r"}
             for key in replacements:

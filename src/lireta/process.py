@@ -1,8 +1,7 @@
-from base import *
+from .base import *
 
 
 def expect(scope: Scope, x, types: list[type | None]):
-
     # if it is a block, process it
     if isinstance(x, Block):
         s = scope if x._prevent_new_scope else scope.child()
@@ -14,7 +13,6 @@ def expect(scope: Scope, x, types: list[type | None]):
 
     matched = False
     for t in types:
-
         if t is None:
             if x is None:
                 matched = True
@@ -39,7 +37,6 @@ def process(x: Block, scope: Scope):
     results = []
 
     for line in lines:
-
         if not isinstance(line, Line):
             raise TypeError("Element is not a Line")
 
@@ -49,7 +46,6 @@ def process(x: Block, scope: Scope):
 
         # check for invalid entries in `contents` and clear out None
         for word in contents:
-
             if word is None:
                 continue
 

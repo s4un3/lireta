@@ -23,3 +23,40 @@ lireta = 'lireta.main:main'
 numpy = "^2.2.4"
 scipy = "^1.15.2"
 sounddevice = "^0.5.1"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.5"
+basedpyright = "^1.28.5"
+
+[tool.pyright]
+executionEnvironments = [{ root = "src" }]
+venvPath = "."
+venv = ".venv"
+ignore = [".venv"]
+
+[tool.ruff.lint]
+preview = true
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # pydoclint
+    "DOC",
+    # pydocstyle
+    "D",
+]
+ignore = [
+    # Incompatible with D211
+    "D203",
+    # Incompatible with D212
+    "D213",
+]
