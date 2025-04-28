@@ -307,3 +307,20 @@ class AudioWave:
         scaled_wave = np.int16(np.array(aux._wave) * 32767)  # scale to 16-bit PCM
         wavfile.write(filename, aux._samplerate, scaled_wave)  # pyright: ignore[reportUnknownMemberType]
         return self
+
+    def amplitude_effect(self, f: Callable[[float | int], float | int]):
+        """Applly an effect to the amplitude according to the proportion of time.
+
+        For example, `lambda t: t` will make the audio start muted and end identical to
+        the original, since t=0 corresponds to the start and t=1 corresponds to the end.
+
+        Returns:
+        self
+
+        Args:
+        f(Callable[[float | int], float | int]): the function to be applied.
+
+        """
+        k = len(self._wave)
+        self._wave = [self._wave[i] * f(i / k) for i in range(k)]
+        return self

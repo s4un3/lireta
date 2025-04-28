@@ -1,8 +1,9 @@
-from .instrument import Instrument
-from .base import Keyword, Scope, to_flt, LiretaString, Block, Line
-from .audiowave import AudioWave
 import numpy as np
-from .process import expect, process
+
+from .audiowave import AudioWave
+from .base import Block, Keyword, Line, LiretaString, Scope, to_flt
+from .instrument import Instrument
+from .process import expect
 
 
 class KWseq(Keyword):
@@ -34,7 +35,7 @@ class KWnote(Keyword):
             time = to_flt(str(expect(scope, params[1], [str, LiretaString])))
         elif len(params) != 1:
             raise RuntimeError(
-                f"Number of parameters is incorrect for 'note'. It mush have 1 or 2 parameters."
+                "Number of parameters is incorrect for 'note'. It mush have 1 or 2 parameters."
             )
         else:
             time = to_flt(scope.read("duration"))
@@ -43,8 +44,8 @@ class KWnote(Keyword):
         notename = str(expect(scope, params[0], [str, LiretaString]))
         if (freq := scope.notetofreq(notename)) is None:
             raise ValueError(f"'{notename}' is not a valid note name.")
-        instr = scope._common._instruments[scope.read("instrument")]
-        return scope._common.note(time, freq, to_flt(scope.read("intensity")), instr)
+        instr = scope.common._instruments[scope.read("instrument")]
+        return scope.common.note(time, freq, to_flt(scope.read("intensity")), instr)
 
 
 class KWsimult(Keyword):
@@ -91,7 +92,7 @@ class KWvar(Keyword):
                 return scope.read(str(expect(scope, params[0], [str, LiretaString])))
             case _:
                 raise RuntimeError(
-                    "Number of parameters is incorrect for 'var'. It mush have 1 or 3 parameters."
+                    "Number of parameters is incorrect for 'var'. It must have 1 or 3 parameters."
                 )
 
 
@@ -119,24 +120,24 @@ class KWsfx(Keyword):
 
     def fn(self, scope: Scope, params: list):
         instr = str(expect(scope, params[0], [str, LiretaString]))
-        instrument = scope._common._instruments[instr]
+        instrument = scope.common._instruments[instr]
         if not instrument._pitchless:
             raise ValueError(
                 "Instrument must be pitchless in order to be used as an effect."
             )
-        freq = instrument._tracks[0]._freq
+        freq = instrument.tracks[0].freq
 
         if len(params) == 2:
             time = to_flt(str(expect(scope, params[1], [str, LiretaString])))
         elif len(params) != 1:
             raise RuntimeError(
-                f"Number of parameters is incorrect for 'sfx'. It mush have 1 or 2 parameters."
+                "Number of parameters is incorrect for 'sfx'. It mush have 1 or 2 parameters."
             )
         else:
             time = to_flt(scope.read("duration"))
         time *= 60 / to_flt(scope.read("bpm"))
 
-        return scope._common.note(
+        return scope.common.note(
             time, freq, to_flt(scope.read("intensity")), instrument
         )
 
@@ -242,21 +243,21 @@ class KWstring(Keyword):
 
 
 class Sin(Instrument):
-    _name = "sin"
+    name = "sin"
 
     def waveform(self, frequency: float):
         return lambda t: np.sin(2 * np.pi * t)
 
 
 class Square(Instrument):
-    _name = "square"
+    name = "square"
 
     def waveform(self, frequency: float):
         return lambda t: np.sign(np.sin(2 * np.pi * t))
 
 
 class Saw(Instrument):
-    _name = "saw"
+    name = "saw"
 
     def waveform(self, frequency: float):
         return lambda t: np.arcsin(np.sin(2 * np.pi * t))
