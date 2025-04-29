@@ -15,13 +15,13 @@ Num = float | int
 
 def to_flt(s: str | Num) -> float:
     """Transform the parameter into a float, supporting strings with fractions.
-    
+
     Args:
     s(str | Num): the parameter to be transformed into float.
-    
+
     Returns:
     float
-    
+
     """
     if isinstance(s, str) and "/" in s:
         v = s.split("/")
@@ -35,10 +35,10 @@ class LiretaString:
 
     def __init__(self, value: str):
         """Store the value as a string.
-        
+
         Args:
         value(str): the string to be stored.
-        
+
         """
         self.value: str = str(value)
 
@@ -56,7 +56,7 @@ class Block:
 
     def __init__(self, value: list[Line], prevent_new_scope: bool = False):
         """Store a list of lines as a block.
-        
+
         Args:
         value(list[Line]): the list of lines to be stored.
         prevent_new_scope(bool): if the block should not be resolved in a deeper scope.
@@ -75,16 +75,19 @@ class Line:
 
     def __init__(self, value: list):  # pyright: ignore[reportMissingTypeArgument, reportUnknownParameterType]
         """Store a list as a line.
-        
+
         Args:
         value(list): the list to be stored.
-        
+
         """
         self.value: list = list(value)  # pyright: ignore[reportMissingTypeArgument, reportUnknownArgumentType]
 
     @override
     def __repr__(self) -> str:
         return "Line" + str(list(self.value))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+
+
+BasicallyAny = Block | LiretaString | str | AudioWave
 
 
 class Keyword(ABC):
@@ -94,7 +97,7 @@ class Keyword(ABC):
 
     @abstractmethod
     def fn(
-        self, scope: Scope, params: list[str | LiretaString | Block]
+        self, scope: Scope, params: list[BasicallyAny | None]
     ) -> None | Block | AudioWave | LiretaString | str:
         """Do what should be done when matching this keyword."""
         pass
@@ -107,7 +110,7 @@ class Common:
         self, keywords: list[type[Keyword]], instruments: dict[str, type[Instrument]]
     ):
         self.keywords: list[Keyword] = [k() for k in keywords]
-        self._instruments: dict[str, Instrument] = {
+        self.instruments: dict[str, Instrument] = {
             name: instruments[name]() for name in instruments
         }
         self._notecache: dict[tuple[float, float, float, str], AudioWave] = {}
@@ -116,13 +119,13 @@ class Common:
         self, duration: float, frequency: float, amplitude: float, instr: Instrument
     ):
         """Manage note cacheing.
-        
+
         Raises:
         TypeError: for parameters with invalid types.
-        
+
         Returns:
         AudioWave
-        
+
         """
         if any([not isinstance(p, float) for p in [duration, frequency, amplitude]]):
             raise TypeError("Expected parameters as `float`.")
@@ -148,11 +151,11 @@ class Scope:
 
     def __init__(self, common: Common, base: Self | None = None):
         """Create a scope.
-        
+
         Args:
         common(Common): the common items for all scopes.
         base(Self | None): what scope this originates from.
-        
+
         """
         self._base: Self | None = base
 
@@ -175,7 +178,7 @@ class Scope:
 
     def child(self):
         """Create a scope originating from this one.
-        
+
         Returns:
         Scope
 
@@ -184,16 +187,16 @@ class Scope:
 
     def read(self, key: str) -> Any:   # pyright: ignore[reportExplicitAny, reportAny]
         """Try to access the scope's and its parents' 'vars' and find a key, returning its value.
-        
+
         Args:
         key(str): the key
-        
+
         Returns:
         Any
-        
+
         Raises:
         KeyError: if the key is not there.
-        
+
         """  # noqa: E501
         if key in self._vars:
             return self._vars[key]  # pyright: ignore[reportAny]
@@ -230,16 +233,16 @@ class Scope:
 
     def notetofreq(self, note: str) -> float | None:
         """Return None if it is an invalid note, otherwise the corresponding frequency.
-        
+
         Args:
         note(str): the string representing a note.
-        
+
         Returns:
         float | None
 
         Raises:
         ValueError: if something went wrong with the regex.
-        
+
         """
         if note.endswith("Hz"):
             return float(note.rstrip("Hz"))
@@ -275,7 +278,7 @@ class Scope:
             # fourth capturing group
             # [\+-]*
             # captures 0 or more "+" or "-" (note that you can mix them)
-            # represents relative octave jumps from the default octave 
+            # represents relative octave jumps from the default octave
             # ("+" is upper octave, "-" is lower octave)
             #
             # fifth capturing group
@@ -330,7 +333,7 @@ class Scope:
             "G": 10 - 12,
         }[
             # a dictionary of note names to semitone values in relation to A
-            # since the octave starts at C, the notes C, D, E, F and G need to be 
+            # since the octave starts at C, the notes C, D, E, F and G need to be
             # negative due to a subtraction of 12 semitones (one octave) to keep them
             # in the same octave as the A
             groups[0]

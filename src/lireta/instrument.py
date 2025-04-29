@@ -99,7 +99,7 @@ class Instrument(ABC):
 
     name: str
     tracks: list[Track]
-    _pitchless: bool
+    pitchless: bool
     _continuous: bool
     _interpolation: str
 
@@ -114,7 +114,7 @@ class Instrument(ABC):
 
         For instruments defined in json files.
         """
-        cls._pitchless = pitchless
+        cls.pitchless = pitchless
         cls._continuous = continuous
         cls._interpolation = interpolation
 
@@ -187,7 +187,7 @@ class Instrument(ABC):
         ValueError: if the interpolation is not valid.
 
         """  # noqa: E501
-        if self._pitchless:
+        if self.pitchless:
             w = self.tracks[0].as_callable()
             return self._fixcontinuous(w) if self._continuous else w
 
