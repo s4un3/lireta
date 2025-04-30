@@ -1,15 +1,28 @@
+
+"""Method for the building blocks that organize data related to lireta."""
+
 from __future__ import annotations
-from typing import Any, Union, Callable, Self
+
 import re
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from typing import Any, Self, override
 
 from .audiowave import AudioWave
 from .instrument import Instrument
 
-Num = Union[float, int]
+Num = float | int
 
 
-def to_flt(s: str):
+def to_flt(s: str | Num) -> float:
+    """Transform the parameter into a float, supporting strings with fractions.
+
+    Args:
+    s(str | Num): the parameter to be transformed into float.
+
+    Returns:
+    float
+
+    """
     if isinstance(s, str) and "/" in s:
         v = s.split("/")
         return float(v[0]) / float(v[1])
@@ -18,64 +31,109 @@ def to_flt(s: str):
 
 
 class LiretaString:
+    """An internal string for lireta, to make them different than python strings."""
+
     def __init__(self, value: str):
-        self.value = str(value)
+        """Store the value as a string.
 
+        Args:
+        value(str): the string to be stored.
+
+        """
+        self.value: str = str(value)
+
+    @override
     def __str__(self) -> str:
-        return self.value
+        return f"LiretaString \"{self.value}\""
 
+    @override
     def __repr__(self) -> str:
         return str(self)
 
 
 class Block:
-    def __init__(self, value: list, prevent_new_scope: bool = False):
-        self.value = list(value)
-        self._prevent_new_scope = prevent_new_scope
+    """Corresponds to a block inside lireta."""
 
+    def __init__(self, value: list[Line], prevent_new_scope: bool = False):
+        """Store a list of lines as a block.
+
+        Args:
+        value(list[Line]): the list of lines to be stored.
+        prevent_new_scope(bool): if the block should not be resolved in a deeper scope.
+
+        """
+        self.value: list[Line] = list(value)
+        self.prevent_new_scope: bool = prevent_new_scope
+
+    @override
     def __repr__(self) -> str:
         return "Block" + str(list(self.value))
 
 
 class Line:
-    def __init__(self, value: list):
-        self.value = list(value)
+    """Corresponds to a line inside lireta."""
 
+    def __init__(self, value: list):  # pyright: ignore[reportMissingTypeArgument, reportUnknownParameterType]
+        """Store a list as a line.
+
+        Args:
+        value(list): the list to be stored.
+
+        """
+        self.value: list = list(value)  # pyright: ignore[reportMissingTypeArgument, reportUnknownArgumentType]
+
+    @override
     def __repr__(self) -> str:
-        return "Line" + str(list(self.value))
+        return "Line" + str(list(self.value))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
 
 
-class Keyword:
-    """Base class for keywords"""
+BasicallyAny = Block | LiretaString | str | AudioWave
+
+
+class Keyword(ABC):
+    """Base class for keywords."""
 
     name: str
 
-    def fn(self, scope: Scope, params: list) -> Any:
+    @abstractmethod
+    def fn(
+        self, scope: Scope, params: list[BasicallyAny | None]
+    ) -> None | Block | AudioWave | LiretaString | str:
+        """Do what should be done when matching this keyword."""
         pass
 
 
 class Common:
-    """Class used to store common data between all scopes that should not be changed by keywords"""
+    """Used to store shared data between all scopes, that should not be changed."""
 
-    def __init__(
+    def __init__(  # noqa: D107
         self, keywords: list[type[Keyword]], instruments: dict[str, type[Instrument]]
     ):
-        self._keywords = [k() for k in keywords]
-        self._instruments = {name: instruments[name]() for name in instruments}
-        self._notecache = {}
+        self.keywords: list[Keyword] = [k() for k in keywords]
+        self.instruments: dict[str, Instrument] = {
+            name: instruments[name]() for name in instruments
+        }
+        self._notecache: dict[tuple[float, float, float, str], AudioWave] = {}
 
     def note(
         self, duration: float, frequency: float, amplitude: float, instr: Instrument
     ):
-        """Manages note cacheing"""
+        """Manage note cacheing.
 
+        Raises:
+        TypeError: for parameters with invalid types.
+
+        Returns:
+        AudioWave
+
+        """
         if any([not isinstance(p, float) for p in [duration, frequency, amplitude]]):
             raise TypeError("Expected parameters as `float`.")
 
-        if not isinstance(instr, Instrument):
-            raise TypeError("Parameter `instr` must be an instrument.")
+        if not isinstance(instr, Instrument):  # pyright: ignore[reportUnnecessaryIsInstance]
+            raise TypeError("Parameter `instr` must be an instrument.")  # pyright: ignore[reportUnreachable]
 
-        key = (duration, frequency, amplitude, instr._name)
+        key = (duration, frequency, amplitude, instr.name)
 
         if key in self._notecache:
             return self._notecache[key]
@@ -89,15 +147,22 @@ class Common:
 
 
 class Scope:
-    def __init__(self, common: Common, base: Self | None = None):
+    """Corresponds to a scope inside lireta."""
 
-        # which scope this originates from
+    def __init__(self, common: Common, base: Self | None = None):
+        """Create a scope.
+
+        Args:
+        common(Common): the common items for all scopes.
+        base(Self | None): what scope this originates from.
+
+        """
         self._base: Self | None = base
 
         if (
             self._base is None
         ):  # if it is a "root" scope, fill the default built in values
-            self._vars = {
+            self._vars: dict[str, Any] = {  # pyright: ignore[reportExplicitAny]
                 "octave": "4",
                 "tuning": "440",
                 "bpm": "120",
@@ -109,19 +174,36 @@ class Scope:
             # if it is not a root scope, it does not have any initial local variables
             self._vars = {}
 
-        self._common = common
+        self.common: Common = common
 
     def child(self):
-        return Scope(self._common, self)
+        """Create a scope originating from this one.
 
-    def read(self, key: str) -> Any:
-        """Tries to access the scope and its parents and find a key, returning its value"""
+        Returns:
+        Scope
+
+        """
+        return Scope(self.common, self)
+
+    def read(self, key: str) -> Any:   # pyright: ignore[reportExplicitAny, reportAny]
+        """Try to access the scope's and its parents' 'vars' and find a key, returning its value.
+
+        Args:
+        key(str): the key
+
+        Returns:
+        Any
+
+        Raises:
+        KeyError: if the key is not there.
+
+        """  # noqa: E501
         if key in self._vars:
-            return self._vars[key]
+            return self._vars[key]  # pyright: ignore[reportAny]
         elif self._base is None:
             raise KeyError(f"Key '{key}' not found.")
         else:
-            return self._base.read(key)
+            return self._base.read(key)  # pyright: ignore[reportAny]
 
     def _find(self, key: str) -> bool:
         if key in self._vars:
@@ -131,13 +213,16 @@ class Scope:
         else:
             return self._base._find(key)
 
-    def declare(self, key: str, value):
-        """Creates a local entry in the upper scope"""
-
+    def declare(self, key: str, value: Any):  # pyright: ignore[reportExplicitAny, reportAny]  # noqa: D102
         self._vars[key] = value
 
-    def assign(self, key: str, value):
-        """Tries to assign a key in the scope and its parents to a value"""
+    def assign(self, key: str, value: Any):  # pyright: ignore[reportExplicitAny, reportAny]
+        """Try to assign a key in the scope and its parents to a value.
+
+        Raises:
+        KeyError: if there isn't a declared variable with that name.
+
+        """
         if not self._find(key):
             raise KeyError(f"Key '{key}' not found.")
         else:
@@ -147,14 +232,27 @@ class Scope:
                 self._base.assign(key, value)
 
     def notetofreq(self, note: str) -> float | None:
-        """None is the result of an invalid note, otherwise the result is a float"""
+        """Return None if it is an invalid note, otherwise the corresponding frequency.
+
+        Args:
+        note(str): the string representing a note.
+
+        Returns:
+        float | None
+
+        Raises:
+        ValueError: if something went wrong with the regex.
+
+        """
         if note.endswith("Hz"):
             return float(note.rstrip("Hz"))
-        # if the note is a frequency already (marked by the "Hz" ending), just convert to float and return
+        # if the note is a frequency already (marked by the "Hz" ending),
+        # just convert to float and return
 
         if note == "_":
             return 0
-        # "_" marks a pause (silence) and the easiest way to do that is to return a frequency of 0
+        # "_" marks a pause (silence) and the easiest way
+        #  to do that is to return a frequency of 0
 
         u = re.match(
             r"([A-G])([#b]*)(?:\(([\+-]\d+(?:\.\d+)?)?c\))?([\+-]*)(~?\d+)?"
@@ -166,12 +264,13 @@ class Scope:
             #
             # second capturing group
             # [#b]*
-            # caputres 0 or more "#" or "b" (note that you can mix them)
+            # captures 0 or more "#" or "b" (note that you can mix them)
             # represents the accidentals ("#" for sharp, "b" for flat)
             #
             # third capturing group
             # ([\+-]\d+(?:\.\d+)?)
-            # captures either "+" or "-", followed by a number (obligatory digits, optional single "." and obligatory digits only if "." was used)
+            # captures either "+" or "-", followed by a number (obligatory digits,
+            # optional single "." and obligatory digits only if "." was used)
             # only captured if it is between "(" and "c)"
             # only captures once
             # represents cent offsets (one hundredth of a semitone)
@@ -179,15 +278,19 @@ class Scope:
             # fourth capturing group
             # [\+-]*
             # captures 0 or more "+" or "-" (note that you can mix them)
-            # represents relative octave jumps from the default octave ("+" is upper octave, "-" is lower octave)
+            # represents relative octave jumps from the default octave
+            # ("+" is upper octave, "-" is lower octave)
             #
             # fifth capturing group
             # ~?\d+
             # captures an optional "~" and an integer
-            # "~" is used instead of "-" since the latter is used in the fourth capturing group
+            # "~" is used instead of "-" since the latter is used in the fourth
+            # capturing group
             # represents a absolute octave
             #
-            # the fourth and fifth capturing groups are not supposed to occur simultaneously, but assuring that is much easier after the capturing than during it
+            # the fourth and fifth capturing groups are not supposed to occur
+            # simultaneously, but assuring that is much easier after the capturing
+            # than during it
             #
             ,
             note,
@@ -202,7 +305,8 @@ class Scope:
         # the result of the convertion of each capturing group
         computed: list[Num] = [0] * len(groups)
 
-        # we won't need any more information from the Match class, and this function goes for a while, so let's delete it
+        # we won't need any more information from the Match class,
+        # and this function goes for a while, so let's delete it
         del u
 
         aux = "(" + groups[2] + "c)" if groups[2] else ""
@@ -210,11 +314,13 @@ class Scope:
 
         if reconstruction != note:
             # essentially a sanity check because i don't want to debug regex
-            # so the dirty way to do it is to see if a rebuilt string from the capturing groups is the same as what we started with
+            # so the dirty way to do it is to see if a rebuilt string
+            # from the capturing groups is the same as what we started with
             return None
 
         if groups[3] and groups[4]:
-            # since it doesn't make sense to have both a relative and an absolute octave setting, it is considered an invalid note
+            # since it doesn't make sense to have both a relative and
+            # an absolute octave setting, it is considered an invalid note
             return None
 
         computed[0] = {
@@ -227,11 +333,14 @@ class Scope:
             "G": 10 - 12,
         }[
             # a dictionary of note names to semitone values in relation to A
-            # since the octave starts at C, the notes C, D, E, F and G need to be negative due to a subtraction of 12 semitones (one octave) to keep them in the same octave as the A
+            # since the octave starts at C, the notes C, D, E, F and G need to be
+            # negative due to a subtraction of 12 semitones (one octave) to keep them
+            # in the same octave as the A
             groups[0]
         ]
 
-        # lowers 4 octaves to compensate that `tuning` is in respect of the fourth octave
+        # lowers 4 octaves to compensate that `tuning` is in respect to the
+        # fourth octave
         sum = -48
 
         for i in groups[1]:
@@ -259,8 +368,8 @@ class Scope:
                     raise ValueError(f"Unexpected relative octave modifier '{i}'.")
         computed[3] = sum
 
-        octave = to_flt(self.read("octave"))
-        tuning = to_flt(self.read("tuning"))
+        octave = to_flt(self.read("octave"))  # pyright: ignore[reportAny]
+        tuning = to_flt(self.read("tuning"))  # pyright: ignore[reportAny]
 
         computed[4] = (
             int(groups[4].replace("~", "-")) * 12 if groups[4] else octave * 12

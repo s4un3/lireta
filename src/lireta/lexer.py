@@ -1,8 +1,20 @@
-from .base import LiretaString, Block, Line
+
+"""Module for the lexing function."""
+
+from .base import Block, Line, LiretaString
 
 
-def lex(path: str) -> tuple[Block, str]:
-    def _preprocess(s: str) -> tuple[list, int, str]:
+def lex(text: str) -> tuple[Block, str]:
+    """Take a string break it down, organizing in a Block and a configuration path.
+    
+    Args:
+    text(str): the string to be lexed.
+    
+    Returns:
+    tuple[Block, str]
+    
+    """
+    def _preprocess(s: str) -> tuple[list, int, str]:  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
         processed = []
         config = ""
         word = ""
@@ -24,38 +36,39 @@ def lex(path: str) -> tuple[Block, str]:
                             word = ""
                             state = 2
                         if word:
-                            line.append(word)
+                            line.append(word)  # pyright: ignore[reportUnknownMemberType]
                             word = ""
                         continue
 
                     if char == "#" and not word:
                         state = 1
                         if word:
-                            line.append(word)
+                            line.append(word)  # pyright: ignore[reportUnknownMemberType]
                             word = ""
                         continue
 
                     if char == "}":
                         if word or line:
                             raise RuntimeError("Line didn't end before block end")
-                        return (processed, i, config)
+                        return (processed, i, config)  # pyright: ignore[reportUnknownVariableType]
 
                     if char == "{":
                         if word:
-                            line.append(word)
+                            line.append(word)  # pyright: ignore[reportUnknownMemberType]
                             word = ""
-                        u, j, c = _preprocess(s[i:])
+                        
+                        u, j, _ = _preprocess(s[i:])  # pyright: ignore[reportUnknownVariableType]
                         if u:
-                            line.append(Block(u))
+                            line.append(Block(u))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
                         i += j
                         continue
 
                     if char == ";":
                         if word:
-                            line.append(word)
+                            line.append(word)  # pyright: ignore[reportUnknownMemberType]
                             word = ""
                         if line:
-                            processed.append(Line(line))
+                            processed.append(Line(line))  # pyright: ignore[reportUnknownMemberType]
                             line = []
                         continue
 
@@ -103,7 +116,7 @@ def lex(path: str) -> tuple[Block, str]:
                         if word.endswith("\\"):
                             word = word[:-1]
                         elif word:
-                            line.append(LiretaString(word))
+                            line.append(LiretaString(word))  # pyright: ignore[reportUnknownMemberType]
                             word = ""
                             state = 0
                             continue
@@ -119,7 +132,7 @@ def lex(path: str) -> tuple[Block, str]:
         if word or line or state:
             raise RuntimeError("Unexpected end state for block")
 
-        return (processed, i, config)
+        return (processed, i, config)  # pyright: ignore[reportUnknownVariableType]
 
-    content, _, configpath = _preprocess(open(path, "r").read())
-    return (Block(content, True), configpath)
+    content, _, configpath = _preprocess(text)  # pyright: ignore[reportUnknownVariableType]
+    return (Block(content, True), configpath)  # pyright: ignore[reportUnknownArgumentType]
