@@ -495,6 +495,14 @@ class KWoperation(Keyword):  # noqa: D101
 class KWstrop(Keyword):  # noqa: D101
     name: str = "strop"
 
+    """
+    will have:
+    contains
+    slice
+    find
+    replace
+    """
+
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):
         pass
