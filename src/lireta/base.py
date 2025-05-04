@@ -44,7 +44,7 @@ class LiretaString:
 
     @override
     def __str__(self) -> str:
-        return f"LiretaString \"{self.value}\""
+        return self.value
 
     @override
     def __repr__(self) -> str:
