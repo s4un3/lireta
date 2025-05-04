@@ -492,20 +492,60 @@ class KWoperation(Keyword):  # noqa: D101
                 raise ValueError("Number of parameters is incorrect for 'op'. It must have 3 parameters.")  # noqa: E501
 
 
-class KWstrop(Keyword):  # noqa: D101
-    name: str = "strop"
-
-    """
-    will have:
-    contains
-    slice
-    find
-    replace
-    """
+class KWwhile(Keyword):  # noqa: D101
+    name: str = "while"
 
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):
-        pass
+        if not isinstance(params[1], Block):
+            raise TypeError("While must recieve a block.")
+        while expect(
+            scope, params[0], [None, str, LiretaString, AudioWave]) is not None:
+            _ = process(params[1], scope)  # pyright: ignore[reportUnknownVariableType]
+
+
+class KWstrop(Keyword):  # noqa: D101
+    name: str = "strop"
+
+    @override
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+        match (v := str(expect(scope, params[0], [str, LiretaString]))):  # pyright: ignore[reportAny]
+            case "contains":
+
+                if len(params) != 3:
+                    raise ValueError("Number of parameters is incorrect for 'strop contains'.")  # noqa: E501
+
+                a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
+                b = str(expect(scope, params[2], [str, LiretaString]))  # pyright: ignore[reportAny]
+
+                if b in a:
+                    return "true"
+                else:
+                    return None
+
+            case "slice":
+                a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
+                i = int(to_flt(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
+                j = int(to_flt(expect(scope, params[3], [str, LiretaString])))  # pyright: ignore[reportAny]
+                return a[i:j]
+
+            case "find":
+                a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
+                b = str(expect(scope, params[2], [str, LiretaString]))  # pyright: ignore[reportAny]
+                return str(a.find(b))
+
+            case "replace":
+                a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
+                b = str(expect(scope, params[2], [str, LiretaString]))  # pyright: ignore[reportAny]
+                c = str(expect(scope, params[3], [str, LiretaString]))  # pyright: ignore[reportAny]
+                return a.replace(b, c)
+            
+            case "strip":
+                a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
+                return a.strip()
+
+            case _:
+                raise ValueError(f"Invalid operation for 'strop': '{v}'")
 
 
 class Sin(Instrument):  # noqa: D101
@@ -545,6 +585,8 @@ available_keywords = [
     KWstring,
     KWif,
     KWcompare,
-    KWoperation
+    KWoperation,
+    KWwhile,
+    KWstrop
 ]
 available_instruments = [Sin, Square, Saw]
