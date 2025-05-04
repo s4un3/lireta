@@ -7,7 +7,7 @@ import numpy as np
 from .audiowave import AudioWave
 from .base import BasicallyAny, Block, Keyword, Line, LiretaString, Scope, to_flt
 from .instrument import Instrument
-from .process import expect, process
+from .process import expect, flatten, process
 
 
 class KWseq(Keyword):  # noqa: D101
@@ -15,8 +15,11 @@ class KWseq(Keyword):  # noqa: D101
 
     @override
     def fn(
-        self, scope: Scope, params: list[BasicallyAny | None]
+        self, scope: Scope, params: list[BasicallyAny | None]  # pyright: ignore[reportRedeclaration]
     ) -> BasicallyAny | None:
+
+        params: list[BasicallyAny] = flatten(params)
+
         w = AudioWave()
         changed = False
         for item in params:
@@ -36,7 +39,10 @@ class KWnote(Keyword):  # noqa: D101
     name: str = "note"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
+
         if len(params) == 2:
             time = to_flt(str(expect(scope, params[1], [str, LiretaString])))    # pyright: ignore[reportAny]
         elif len(params) != 1:
@@ -58,7 +64,10 @@ class KWsimult(Keyword):  # noqa: D101
     name: str = "simult"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
+
         w = AudioWave()
         changed = False
         for item in params:
@@ -78,7 +87,10 @@ class KWvar(Keyword):  # noqa: D101
     name: str = "var"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
+
         match len(params):
             case 3:
                 name = str(expect(scope, params[0], [str, LiretaString]))  # pyright: ignore[reportAny]
@@ -108,7 +120,10 @@ class KWprint(Keyword):  # noqa: D101
     name: str = "print"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
+
         def _format(s: str):
             replacements = {r"\n": "\n", r"\t": "\t", r"\b": "\b", r"\r": "\r"}
             for key in replacements:
@@ -117,8 +132,6 @@ class KWprint(Keyword):  # noqa: D101
             return s
 
         for param in params:
-            if param is None:
-                continue
             print(
                 end=_format(str(expect(scope, param, [str, LiretaString]))), flush=True  # pyright: ignore[reportAny]
             )
@@ -128,8 +141,11 @@ class KWsfx(Keyword):  # noqa: D101
     name: str = "sfx"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
         instr = str(expect(scope, params[0], [str, LiretaString]))  # pyright: ignore[reportAny]
+
+        params: list[BasicallyAny] = flatten(params)
+
         instrument = scope.common.instruments[instr]
         if not instrument.pitchless:
             raise ValueError(
@@ -156,7 +172,10 @@ class KWrepeat(Keyword):  # noqa: D101
     name: str = "repeat"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
+        
         if len(params) == 0:
             raise RuntimeError(
                 "Number of parameters is incorrect for 'repeat'. It mush have at least 1 parameter."  # noqa: E501
@@ -169,7 +188,9 @@ class KWfunc(Keyword):  # noqa: D101
     name: str = "func"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportUnknownParameterType]
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportUnknownParameterType, reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
 
         # detect unclean functions and set `k` to store the current scope for clean
         # functions
@@ -200,7 +221,7 @@ class KWfunc(Keyword):  # noqa: D101
 
                 for i in range(len(args)):
                     while isinstance(args[i], Block):
-                        args[i] = process(args[i], scope)  # pyright: ignore[reportArgumentType]
+                        args[i] = process(args[i], scope)  # pyright: ignore[reportArgumentType, reportCallIssue]
 
                 if len(fargs) != len(args):  # pyright: ignore[reportAny]
                     raise SyntaxError(
@@ -236,7 +257,10 @@ class KWdot(Keyword):  # noqa: D101
     name: str = "."
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
+
         for item in params:
             expect(scope, item, [str, LiretaString, AudioWave, None])
 
@@ -245,7 +269,10 @@ class KWstring(Keyword):  # noqa: D101
     name: str = "string"
 
     @override
-    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
+
+        params: list[BasicallyAny] = flatten(params)
+
         ret = ""
         for item in params:
             if isinstance(item, list):

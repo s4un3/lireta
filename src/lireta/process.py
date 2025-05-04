@@ -3,20 +3,37 @@
 from typing import Any
 
 from .audiowave import AudioWave
-from .base import Block, Line, LiretaString, Scope
+from .base import BasicallyAny, Block, Line, LiretaString, Scope
+
+
+def flatten(l: list[BasicallyAny | None]):
+    """Remove None from a list.
+
+    Args:
+    l(list[BasicallyAny | None]): the list
+
+    Returns:
+    list[BasicallyAny]
+
+    """
+    r: list[BasicallyAny] = []
+    for i in l:
+        if i is not None:
+            r.append(i)
+    return r
 
 
 def expect(scope: Scope, x: Any, types: list[type | None]) -> Any:  # pyright: ignore[reportExplicitAny, reportAny]
     """Try to solve a value for certain types.
-    
+
     Args:
     scope(Scope): where should the value be solved if it is a Block
     x(Any): the value
     types(list[type | None]): the expected types
-    
+
     Returns:
     Any
-    
+
     Raises:
     TypeError: if the value is incompatible with the types.
 
@@ -67,8 +84,6 @@ def process(x: Block, scope: Scope):  # noqa: D103 # pyright: ignore[reportUnkno
 
         # check for invalid entries in `contents` and clear out None
         for word in contents:  # pyright: ignore[reportUnknownVariableType]
-            if word is None:
-                continue
 
             if isinstance(word, Line):
                 raise TypeError("Cannot have a Line directly inside of a Line.")
