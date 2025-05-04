@@ -217,7 +217,7 @@ class KWfunc(Keyword):  # noqa: D101
 
                 for i in range(len(args)):
                     while isinstance(args[i], Block):
-                        args[i] = process(args[i], scope)  # pyright: ignore[reportArgumentType, reportCallIssue]
+                        args[i] = process(args[i], scope)  # pyright: ignore[reportArgumentType]
 
                 if len(fargs) != len(args):  # pyright: ignore[reportAny]
                     raise SyntaxError(
@@ -278,30 +278,32 @@ class KWstring(Keyword):  # noqa: D101
             ret += str(item)
         return LiretaString(ret)
 
-class KWif(Keyword):
+
+class KWif(Keyword):  # noqa: D101
     name: str = "if"
 
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):
         match len(params):
             case 2:
-                if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:
+                if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:  # noqa: E501
                     return Block([Line([params[1]])])
             case 3:
-                if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:
+                if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:  # noqa: E501
                     return Block([Line([params[1]])])
                 else:
                     return Block([Line([params[2]])])
             case _:
-                raise ValueError("Number of parameters is incorrect for 'if'. It must have 2 or 3 parameters.")
+                raise ValueError("Number of parameters is incorrect for 'if'. It must have 2 or 3 parameters.")  # noqa: E501
 
-class KWcompare(Keyword):
+
+class KWcompare(Keyword):  # noqa: D101
     name: str = "?"
 
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):
         if len(params) != 3:
-            raise ValueError("Number of parameters is incorrect for '?'. It must have 3 parameters.")
+            raise ValueError("Number of parameters is incorrect for '?'. It must have 3 parameters.")  # noqa: E501
 
         symbol = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
 
@@ -309,45 +311,50 @@ class KWcompare(Keyword):
             case ">":
                 a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                 b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                if a>b:
+                if a > b:
                     return "true"
                 else:
                     return None
             case ">=":
                 a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                 b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                if a>=b:
+                if a >= b:
                     return "true"
                 else:
                     return None
             case "<":
                 a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                 b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                if a<b:
+                if a < b:
                     return "true"
                 else:
                     return None
             case "<=":
                 a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                 b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                if a<=b:
+                if a <= b:
                     return "true"
                 else:
                     return None
             case "==":
-                if expect(scope, params[0], [str, LiretaString, None]) == expect(scope, params[0], [str, LiretaString, None]):
+                if expect(scope, params[0], [str, LiretaString, None]) == (
+                    expect(scope, params[0], [str, LiretaString, None])
+                ):
                     return "true"
                 else:
                     return None
             case "!=":
-                if expect(scope, params[0], [str, LiretaString, None]) != expect(scope, params[0], [str, LiretaString, None]):
+                if expect(scope, params[0], [str, LiretaString, None]) != (
+                    expect(scope, params[0], [str, LiretaString, None])
+                ):
                     return "true"
                 else:
                     return None
             case _:
                 raise ValueError(f"Symbol '{symbol}' is invalid for comparisons.")
 
-class KWoperation(Keyword):
+
+class KWoperation(Keyword):  # noqa: D101
     name: str = "op"
 
     @override
@@ -360,48 +367,54 @@ class KWoperation(Keyword):
                     case "+":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a+b)
+                        return str(a + b)
                     case "-":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a-b)
+                        return str(a - b)
                     case "*":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a*b)
+                        return str(a * b)
                     case "**":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a**b)  # pyright: ignore[reportAny]
+                        return str(a ** b)  # pyright: ignore[reportAny]
                     case "/":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a/b)
+                        return str(a / b)
                     case "//":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a//b)
+                        return str(a // b)
                     case "%":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a%b)
+                        return str(a % b)
                     case "mod":
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        x = a%b + b
-                        return str(x%b)
+                        x = a % b + b
+                        return str(x % b)
                     case "&":
-                        a = int(to_flt(str(expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        b = int(to_flt(str(expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        return str(a&b)
+                        a = int(to_flt(str(
+                            expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
+                        b = int(to_flt(str(
+                            expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
+                        return str(a & b)
                     case "|":
-                        a = int(to_flt(str(expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        b = int(to_flt(str(expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        return str(a|b)
+                        a = int(to_flt(str(
+                            expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
+                        b = int(to_flt(str(
+                            expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
+                        return str(a | b)
                     case "^":
-                        a = int(to_flt(str(expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        b = int(to_flt(str(expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        return str(a^b)
+                        a = int(to_flt(str(
+                            expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
+                        b = int(to_flt(str(
+                            expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
+                        return str(a ^ b)
                     case "and":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
@@ -426,41 +439,41 @@ class KWoperation(Keyword):
                     case "nand":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not(a != "" and b != ""):
+                        if not (a != "" and b != ""):
                             return "true"
                         else:
                             return None
                     case "nor":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not(a != "" or b != ""):
+                        if not (a != "" or b != ""):
                             return "true"
                         else:
                             return None
                     case "xnor":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not(a != "" ^ b != ""):
+                        if not (a != "" ^ b != ""):
                             return "true"
                         else:
                             return None
                     case "<<":
                         a = a = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = int(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a<<b)
+                        return str(a << b)
                     case ">>":
                         a = a = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = int(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a<<b)
+                        return str(a << b)
                     case _:
-                        raise ValueError(f"Symbol '{symbol}' is invalid for operations between 2 values.")
+                        raise ValueError(f"Symbol '{symbol}' is invalid for operations between 2 values.")  # noqa: E501
             case 2:
                 symbol = str(expect(scope, params[0], [str, LiretaString]))  # pyright: ignore[reportAny]
 
                 match symbol:
                     case "not":
                         a = expect(scope, params[1], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not(a):
+                        if not (a):
                             return "true"
                         else:
                             return None
@@ -469,14 +482,22 @@ class KWoperation(Keyword):
                         return str(abs(a))
                     case "log":
                         a = to_flt(str(expect(scope, params[1], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(np.log(a)) # pyright: ignore[reportAny]
+                        return str(np.log(a))  # pyright: ignore[reportAny]
                     case "~":
                         a = int(str(expect(scope, params[1], [str, LiretaString])))  # pyright: ignore[reportAny]
                         return str(~a)
                     case _:
-                        raise ValueError(f"Symbol '{symbol}' is invalid for operations on single values.")
+                        raise ValueError(f"Symbol '{symbol}' is invalid for operations on single values.")  # noqa: E501
             case _:
-                raise ValueError("Number of parameters is incorrect for 'op'. It must have 3 parameters.")
+                raise ValueError("Number of parameters is incorrect for 'op'. It must have 3 parameters.")  # noqa: E501
+
+
+class KWstrop(Keyword):  # noqa: D101
+    name: str = "strop"
+
+    @override
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+        pass
 
 
 class Sin(Instrument):  # noqa: D101
