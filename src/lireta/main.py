@@ -10,13 +10,13 @@ from .std import available_instruments, available_keywords
 
 def lireta(text: str) -> AudioWave | None:
     """Try to prouce audio based on a lireta text.
-    
+
     Args:
     text(str): the text to be processed
-    
+
     Returns:
     AudioWave | None
-    
+
     """
     content, config = lex(text)
 
@@ -36,10 +36,9 @@ def lireta(text: str) -> AudioWave | None:
 
 def main():  # noqa: D103
     import argparse
-    from sys import exit
 
     parser = argparse.ArgumentParser(
-        description="Produces audio based on a .lireta file. If no output path is provided, simply plays it, otherwise exports it. "
+        description="Produces audio based on a .lireta file."
     )
 
     _ = parser.add_argument("input", help="Input file path")
@@ -47,7 +46,7 @@ def main():  # noqa: D103
     _ = parser.add_argument(
         "--play",
         "-p",
-        help="Play the audio even if an output file is provided",
+        help="Play the audio.",
         action="store_true",
     )
 
@@ -55,18 +54,15 @@ def main():  # noqa: D103
 
     with open(args.input) as file:  # pyright: ignore[reportAny]
         contents = file.read()
-    
+
     audio = lireta(contents)
 
     if audio is None:
-        exit()
-
-    if args.output is None:   # pyright: ignore[reportAny]
+        return
+    if args.play:   # pyright: ignore[reportAny]
         _ = audio.play()
-        exit()
-    elif args.play:   # pyright: ignore[reportAny]
-        _ = audio.play()
-    _ = audio.export_wav(args.output)   # pyright: ignore[reportAny]
+    if args.output:  # pyright: ignore[reportAny]
+        _ = audio.export_wav(args.output)   # pyright: ignore[reportAny]
 
 
 if __name__ == "__main__":
