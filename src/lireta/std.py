@@ -293,12 +293,40 @@ class KWif(Keyword):  # noqa: D101
                 case "else":
                     return Block([Line([params.pop(0)])])
                 case "elif":
-                    if expect(scope, params.pop(0), [None, str, LiretaString, AudioWave]) is not None:
+                    if expect(
+                        scope, params.pop(0), [None, str, LiretaString, AudioWave]
+                    ) is not None:
                         return Block([Line([params.pop(0)])])
                     else:
                         _ = params.pop(0)
                 case _:
                     raise ValueError("Expected token 'else' or 'elif'.")
+
+
+class KWswitch(Keyword):  # noqa: D101
+    name: str = "switch"
+
+    @override
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+
+        v = str(expect(scope, params.pop(0), [None, str, LiretaString]))  # pyright: ignore[reportAny]
+
+        while True:
+
+            match str(expect(scope, params.pop(0), [str, LiretaString])):  # pyright: ignore[reportAny]
+                case "case":
+                    if str(expect(
+                        scope, params.pop(0), [None, str, LiretaString]
+                    )) == v:  # pyright: ignore[reportAny]
+                        return Block([Line([params.pop(0)])])
+                    else:
+                        _ = params.pop(0)
+                case "default":
+                    if len(params) != 1:
+                        raise ValueError("'default' and its block should be the last things in 'switch'.")  # noqa: E501
+                    return Block([Line([params.pop(0)])])
+                case _:
+                    raise ValueError("Expected token 'case' or 'default'.")
 
 
 class KWcompare(Keyword):  # noqa: D101
@@ -681,6 +709,7 @@ available_keywords = [
     KWdot,
     KWstring,
     KWif,
+    KWswitch,
     KWcompare,
     KWoperation,
     KWwhile,
