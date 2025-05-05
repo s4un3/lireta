@@ -1,6 +1,6 @@
 # Quick-start guide
 
-This document explains the basics of lireta syntax and prepares to write your first script. 
+This document explains the basics of lireta syntax and prepares to write your first script.
 
 ## Types
 
@@ -48,6 +48,17 @@ simult {
 
 Each block here has multiple lines, and all the lines in the block have compatible types. Since they are audios, an implicit `seq` will be called, using the notes `C`, `E`, `G` for the first block, and `C-`, `E-`, `G-` for the second.
 
+(Invalid):
+
+```
+A;
+"abc";
+"def";
+```
+
+Now we have both audio ("`A;`") and strings, which will cause problems.
+
+
 ## Note names
 
 A valid note name consists of:
@@ -58,7 +69,7 @@ A valid note name consists of:
 - Optional octave settings, that can be:
     * Relative: `+` for one octave higher than the default, `-` for one lower, stackable.
     * Absolute: an integer number. Use `~` to mark if it is negative.
-   
+
 Underscores denote pauses, and a number followed by `Hz` is another way to set up a note.
 
 For example:
