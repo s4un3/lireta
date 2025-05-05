@@ -166,20 +166,40 @@ class KWsfx(Keyword):  # noqa: D101
         )
 
 
-class KWrepeat(Keyword):  # noqa: D101
-    name: str = "repeat"
+class KWloop(Keyword):  # noqa: D101
+    name: str = "loop"
 
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):  # pyright: ignore[reportRedeclaration]
 
         params: list[BasicallyAny] = flatten(params)
 
-        if len(params) == 0:
-            raise RuntimeError(
-                "Number of parameters is incorrect for 'repeat'. It mush have at least 1 parameter."  # noqa: E501
+        match len(params):
+
+            case 2:
+                repetitions = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
+                if not isinstance(params[1], Block):
+                    raise ValueError("Expected a block in 'loop'.")
+                return Block([Line([params[1]])] * repetitions)
+
+            case 3:
+                repetitions = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
+                varname = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
+                if not isinstance(params[2], Block):
+                    raise ValueError("Expected a block in 'loop'.")
+                blockcontents = params[2].value
+
+                r: list[Line] = []
+                for i in range(repetitions):
+                    r.extend([Line(["var", varname, ":=", str(i)])] + blockcontents)
+                return Block(r)
+
+
+
+            case _ :
+                raise RuntimeError(
+                "Number of parameters is incorrect for 'loop'. It mush have at least 1 parameter."  # noqa: E501
             )
-        repetitions = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
-        return Block([Line(list(params[1:]))] * repetitions)
 
 
 class KWfunc(Keyword):  # noqa: D101
@@ -704,7 +724,7 @@ available_keywords = [
     KWvar,
     KWprint,
     KWsfx,
-    KWrepeat,
+    KWloop,
     KWfunc,
     KWdot,
     KWstring,
