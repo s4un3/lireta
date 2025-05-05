@@ -122,22 +122,27 @@ The instrument in the parameter must be a pitchless instrument.
 sfx bell;
 ```
 
-## `repeat`
+## `loop`
 
 ### Usage
 
 ```
-repeat number [...];
+loop number {...}; # 1
+loop number name {...}; # 2
 ```
 
-Returns the block(s) repeated `number` times.
+(1) Returns the block repeated `number` times.
+(2) Returns the block repeated `number` times, with the variable `name` accessible within the loop, starting at 0 and incrementing every step.
 
 ### Examples
 
 ```
-repeat 50 C;
-repeat 3 {
+loop 50 C;
+loop 3 {
 	seq A- B- C D;
+};
+loop 5 i {
+	print {var i;} "\n";
 };
 ```
 
@@ -282,10 +287,11 @@ Executes the block(s) ignoring their return(s).
 
 ```
 . {func f;};
+```
 
 ## `string`
 
-## Usage
+### Usage
 
 ```
 string [...];
@@ -293,9 +299,185 @@ string [...];
 
 Transforms parameters into strings, as long as they are compatible (for example, not audio, not functions), and concatenates if there are multiple parameters.
 
-## Examples
+### Examples
 
 ```
 string {func f;};
 string whatever;
+```
+
+## `if`
+
+### Usage
+
+```
+if a {...}
+elif b {...}
+else {...};
+```
+
+Executes a block if the value is not null (None), with support to `elif` and `else`.
+
+### Examples
+
+```
+var x := 10;
+if {var x;} {print "x is not null\n";}
+else {print "x is null\n";};
+```
+
+## `switch`
+
+### Usage
+
+```
+switch a
+case b {...}
+default {...};
+```
+
+Switches to the block that matches a value.
+
+### Examples
+
+```
+var t := 4;
+
+switch {var t;}
+case "!" {print "!!!\n";}
+case "?" {print "???\n";}
+default {print "other\n";};
+```
+
+## `cmp`
+
+### Usage
+
+```
+cmp a operation b;
+```
+
+Compares two values based on an operation.
+
+Supported operations are: `>`, `>=`, `<`, `<=`, `==`, `!=`.
+
+Note that only `==` and `!=` support string comparations, since the greater than and lesser than operations are not well defined for strings.
+
+### Examples
+
+```
+var x := 5;
+if {cmp {var x;} > 10;} {
+	print "x is greater than 10;
+};
+```
+
+## `op`
+
+### Usage
+
+```
+op operation value; # 1
+op a operation b; # 2
+```
+
+(1) Evaluates an operation with a single value. Supports `not`, `abs`, `log`, `~`. `log` is base e=2.73...
+
+(2) Evaluates an operation with two values. Supports `+`, `-`, `*`, `**` (exponentiation), `/`, `//` (integer division), `%` (programming module), `mod` (mathematics module), `&`, `|`, `^`, `and`, `or`, `xor`, `nand`, `nor`, `xnor`, `<<`, `>>`.
+
+### Examples
+
+```
+var x := 10;
+var x = {op {var x;} * 2;};
+var x = {op {var x;} - 1;};
+```
+
+## `while`
+
+### Usage
+
+```
+while {...} {...};
+```
+
+Continues to execute the second block if the first evaluates to a non-null value.
+
+### Examples
+
+```
+var x := 10;
+
+while {cmp x != 0;}{
+	var x = {op {var x;} - 1;};
+};
+```
+
+## `strop`
+
+### Usage
+
+```
+strop contains a b; # 1
+strop slice a i j; # 2
+strop find a b; # 3
+strop replace a b c; # 4
+strop strip a; # 5
+```
+
+Collective for string operations.
+
+(1) Returns `"true"` if `b` is a substring of `a`.
+(2) Returns a substring starting at index i (inclusive) and ending at j (exclusive).
+(3) Returns the index of `b` as a substring of `a`, null if it isn't a substring.
+(4) Replaces all occurences of `b` into `c` inside `a`.
+(5) Removes trailing whitespace of a string.
+
+### Examples
+
+```
+var h := "hello planet";
+var h = {strop replace {var h;} "planet" "world";};
+```
+
+## `ampfx`
+
+### Usage
+
+```
+ampfx t0 : v0 -> t1 : v1 | audio;
+```
+
+Applies a amplitude effect on an audio.
+
+The effect to be applied is according to:
+
+- Before t0, multiply by v0.
+- Between t0 and t1, interpolate between v0 and v1.
+- After t1, multiply by v1.
+
+Time is in proportion of the duration of the audio (0 to 1).
+
+### Examples
+
+```
+ampfx 0 : 0 -> 1 : 0.8 | {C 10;};
+```
+
+## `gliss`
+
+### Usage
+
+```
+gliss a b [duration];
+```
+
+Reads from variables: `duration`, `octave`, `instrument`, `bpm`, `intensity`.
+
+Creates a glissando based on two note names and an optional duration.
+
+### Examples
+
+```
+gliss C D 3;
 ```

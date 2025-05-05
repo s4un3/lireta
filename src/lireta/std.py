@@ -417,7 +417,6 @@ class KWoperation(Keyword):  # noqa: D101
 
                 match symbol:
                     case "+":
-
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
                         return str(a + b)
@@ -526,7 +525,7 @@ class KWoperation(Keyword):  # noqa: D101
                 match symbol:
                     case "not":
                         a = expect(scope, params[1], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not (a):
+                        if a is None:
                             return "true"
                         else:
                             return None
@@ -597,7 +596,10 @@ class KWstrop(Keyword):  # noqa: D101
 
                 a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
                 b = str(expect(scope, params[2], [str, LiretaString]))  # pyright: ignore[reportAny]
-                return str(a.find(b))
+                if (v := a.find(b)) == -1:
+                    return None
+                else:
+                    return str(v)
 
             case "replace":
 
