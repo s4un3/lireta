@@ -289,7 +289,7 @@ class KWif(Keyword):  # noqa: D101
                 if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:  # noqa: E501
                     return Block([Line([params[1]])])
             case 4:
-                if str(expect(scope, params[1], [str, LiretaString])) != "else":  # pyright: ignore[reportAny]
+                if str(expect(scope, params[2], [str, LiretaString])) != "else":  # pyright: ignore[reportAny]
                     raise ValueError("Expected token 'else'.")
                 if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:  # noqa: E501
                     return Block([Line([params[1]])])
