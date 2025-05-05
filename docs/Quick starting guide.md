@@ -8,7 +8,7 @@ In lireta, there are mainly 3 types of data:
 
 - Audio
 - String
-- None
+- Null (None)
 
 ## Blocks, lines and keywords
 
