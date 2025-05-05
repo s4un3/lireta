@@ -93,7 +93,7 @@ class KWvar(Keyword):  # noqa: D101
             case 3:
                 name = str(expect(scope, params[0], [str, LiretaString]))  # pyright: ignore[reportAny]
                 operator = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
-                value = expect(scope, params[2], [str, AudioWave, LiretaString])  # pyright: ignore[reportAny]
+                value = expect(scope, params[2], [None, str, AudioWave, LiretaString])  # pyright: ignore[reportAny]
                 if isinstance(value, LiretaString):
                     value = str(value)
 
@@ -180,7 +180,7 @@ class KWloop(Keyword):  # noqa: D101
                 repetitions = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                 if not isinstance(params[1], Block):
                     raise ValueError("Expected a block in 'loop'.")
-                return Block([Line([params[1]])] * repetitions)
+                return Block(params[1].value * repetitions)
 
             case 3:
                 repetitions = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
@@ -194,9 +194,7 @@ class KWloop(Keyword):  # noqa: D101
                     r.extend([Line(["var", varname, ":=", str(i)])] + blockcontents)
                 return Block(r)
 
-
-
-            case _ :
+            case _:
                 raise RuntimeError(
                 "Number of parameters is incorrect for 'loop'. It mush have at least 1 parameter."  # noqa: E501
             )
@@ -291,11 +289,13 @@ class KWstring(Keyword):  # noqa: D101
 
         ret = ""
         for item in params:
+            while isinstance(item, Block):
+                item = process(item, scope)  # pyright: ignore[reportUnknownVariableType]
             if isinstance(item, list):
                 item = expect(scope, item, [str, LiretaString])  # pyright: ignore[reportAny]
             if item is None:
                 continue
-            ret += str(item)
+            ret += str(item)  # pyright: ignore[reportUnknownArgumentType]
         return LiretaString(ret)
 
 
