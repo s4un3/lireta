@@ -6,13 +6,13 @@ from .base import Block, Line, LiretaString
 
 def lex(text: str) -> tuple[Block, str]:
     """Take a string break it down, organizing in a Block and a configuration path.
-    
+
     Args:
     text(str): the string to be lexed.
-    
+
     Returns:
     tuple[Block, str]
-    
+
     """
     def _preprocess(s: str) -> tuple[list, int, str]:  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
         processed = []
@@ -56,7 +56,7 @@ def lex(text: str) -> tuple[Block, str]:
                         if word:
                             line.append(word)  # pyright: ignore[reportUnknownMemberType]
                             word = ""
-                        
+
                         u, j, _ = _preprocess(s[i:])  # pyright: ignore[reportUnknownVariableType]
                         if u:
                             line.append(Block(u))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
@@ -115,14 +115,10 @@ def lex(text: str) -> tuple[Block, str]:
                     if char == '"':
                         if word.endswith("\\"):
                             word = word[:-1]
-                        elif word:
-                            line.append(LiretaString(word))  # pyright: ignore[reportUnknownMemberType]
-                            word = ""
-                            state = 0
-                            continue
-                        else:
-                            state = 0
-                            continue
+                        line.append(LiretaString(word))  # pyright: ignore[reportUnknownMemberType]
+                        word = ""
+                        state = 0
+                        continue
                     word += char
                     continue
 
