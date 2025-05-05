@@ -365,6 +365,7 @@ class KWoperation(Keyword):  # noqa: D101
 
                 match symbol:
                     case "+":
+
                         a = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
                         return str(a + b)
@@ -418,42 +419,42 @@ class KWoperation(Keyword):  # noqa: D101
                     case "and":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if (a != "" and b != ""):
+                        if (a is not None and b is not None):
                             return "true"
                         else:
                             return None
                     case "or":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if (a != "" or b != ""):
+                        if (a is not None or b is not None):
                             return "true"
                         else:
                             return None
                     case "xor":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if (a != "" ^ b != ""):
+                        if (a is not None ^ b is not None):
                             return "true"
                         else:
                             return None
                     case "nand":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not (a != "" and b != ""):
+                        if not (a is not None and b is not None):
                             return "true"
                         else:
                             return None
                     case "nor":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not (a != "" or b != ""):
+                        if not (a is not None or b is not None):
                             return "true"
                         else:
                             return None
                     case "xnor":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
-                        if not (a != "" ^ b != ""):
+                        if not (a is not None ^ b is not None):
                             return "true"
                         else:
                             return None
@@ -489,7 +490,7 @@ class KWoperation(Keyword):  # noqa: D101
                     case _:
                         raise ValueError(f"Symbol '{symbol}' is invalid for operations on single values.")  # noqa: E501
             case _:
-                raise ValueError("Number of parameters is incorrect for 'op'. It must have 3 parameters.")  # noqa: E501
+                raise ValueError("Number of parameters is incorrect for 'op'. It must have 3 or 2 parameters, depending on the operation.")  # noqa: E501
 
 
 class KWwhile(Keyword):  # noqa: D101
@@ -497,6 +498,10 @@ class KWwhile(Keyword):  # noqa: D101
 
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+
+        if len(params) != 2:
+            raise ValueError("Number of parameters is incorrect for 'while'.")  # noqa: E501
+
         if not isinstance(params[1], Block):
             raise TypeError("While must recieve a block.")
         while expect(
@@ -524,28 +529,116 @@ class KWstrop(Keyword):  # noqa: D101
                     return None
 
             case "slice":
+
+                if len(params) != 4:
+                    raise ValueError("Number of parameters is incorrect for 'strop slice'.")  # noqa: E501
+
                 a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
                 i = int(to_flt(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
                 j = int(to_flt(expect(scope, params[3], [str, LiretaString])))  # pyright: ignore[reportAny]
                 return a[i:j]
 
             case "find":
+
+                if len(params) != 3:
+                    raise ValueError("Number of parameters is incorrect for 'strop find'.")  # noqa: E501
+
                 a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
                 b = str(expect(scope, params[2], [str, LiretaString]))  # pyright: ignore[reportAny]
                 return str(a.find(b))
 
             case "replace":
+
+                if len(params) != 4:
+                    raise ValueError("Number of parameters is incorrect for 'strop replace'.")  # noqa: E501
+
                 a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
                 b = str(expect(scope, params[2], [str, LiretaString]))  # pyright: ignore[reportAny]
                 c = str(expect(scope, params[3], [str, LiretaString]))  # pyright: ignore[reportAny]
                 return a.replace(b, c)
-            
+
             case "strip":
+
+                if len(params) != 2:
+                    raise ValueError("Number of parameters is incorrect for 'strop strip'.")  # noqa: E501
+
                 a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
                 return a.strip()
 
             case _:
                 raise ValueError(f"Invalid operation for 'strop': '{v}'")
+
+
+class KWampfx(Keyword):  # noqa: D101
+    name: str = "ampfx"
+
+    @override
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+        if len(params) != 9:
+            raise ValueError("Number of parameters is incorrect for 'ampfx'.")  # noqa: E501
+
+        starttime = to_flt(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
+
+        if str(expect(scope, params[1], [str, LiretaString])) != ":":  # pyright: ignore[reportAny]
+            raise ValueError("Expected token ':'")
+
+        startintensity = to_flt(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
+
+        if str(expect(scope, params[3], [str, LiretaString])) != "->":  # pyright: ignore[reportAny]
+            raise ValueError("Expected token '->'")
+
+        endtime = to_flt(str(expect(scope, params[4], [str, LiretaString])))  # pyright: ignore[reportAny]
+
+        if str(expect(scope, params[5], [str, LiretaString])) != ":":  # pyright: ignore[reportAny]
+            raise ValueError("Expected token ':'")
+
+        endintensity = to_flt(str(expect(scope, params[6], [str, LiretaString])))  # pyright: ignore[reportAny]
+
+        if str(expect(scope, params[7], [str, LiretaString])) != "|":  # pyright: ignore[reportAny]
+            raise ValueError("Expected token '|'")
+
+        c: AudioWave = expect(scope, params[8], [AudioWave])  # pyright: ignore[reportAny]
+
+        def L(t: float) -> float:
+            if t < starttime:
+                return startintensity
+            elif t > endtime:
+                return endintensity
+            else:
+                return (endintensity - startintensity) / (endtime - starttime) * (
+                    (t - starttime) + startintensity
+                )
+
+        return c.amplitude_effect(L)
+
+
+class KWgliss(Keyword):  # noqa: D101
+    name: str = "gliss"
+
+    @override
+    def fn(self, scope: Scope, params: list[BasicallyAny | None]):
+        if len(params) not in [3, 2]:
+            raise ValueError("Number of parameters is incorrect for 'ampfx'.")  # noqa: E501
+
+        a = scope.notetofreq(expect(scope, params[0], [str, LiretaString]))  # pyright: ignore[reportAny]
+        b = scope.notetofreq(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
+
+        if a is None or b is None:
+            raise ValueError("Invalid frequencies for 'gliss'.")
+
+        if len(params) == 3:
+            time = to_flt(expect(scope, params[2], [str, LiretaString]))  # pyright: ignore[reportAny]
+        else:
+            time = to_flt(scope.read("duration"))  # pyright: ignore[reportAny]
+
+        time *= 60 / to_flt(scope.read("bpm"))  # pyright: ignore[reportAny]
+        waveform = scope.common.instruments[scope.read("instrument")].waveform((a + b) / 2)  # noqa: E501
+        intensity = to_flt(scope.read("intensity"))  # pyright: ignore[reportAny]
+
+        return AudioWave().new(
+            time,
+             lambda t: a * (1 - t / time) + b * t / time, intensity, waveform
+            )
 
 
 class Sin(Instrument):  # noqa: D101
@@ -587,6 +680,8 @@ available_keywords = [
     KWcompare,
     KWoperation,
     KWwhile,
-    KWstrop
+    KWstrop,
+    KWampfx,
+    KWgliss
 ]
 available_instruments = [Sin, Square, Saw]
