@@ -330,7 +330,7 @@ class KWswitch(Keyword):  # noqa: D101
 
 
 class KWcompare(Keyword):  # noqa: D101
-    name: str = "?"
+    name: str = "cmp"
 
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):
