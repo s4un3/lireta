@@ -63,7 +63,3 @@ def main():  # noqa: D103
         _ = audio.play()
     if args.output:  # pyright: ignore[reportAny]
         _ = audio.export_wav(args.output)   # pyright: ignore[reportAny]
-
-
-if __name__ == "__main__":
-    main()
