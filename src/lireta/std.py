@@ -284,19 +284,21 @@ class KWif(Keyword):  # noqa: D101
 
     @override
     def fn(self, scope: Scope, params: list[BasicallyAny | None]):
-        match len(params):
-            case 2:
-                if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:  # noqa: E501
-                    return Block([Line([params[1]])])
-            case 4:
-                if str(expect(scope, params[2], [str, LiretaString])) != "else":  # pyright: ignore[reportAny]
-                    raise ValueError("Expected token 'else'.")
-                if expect(scope, params[0], [None, str, LiretaString, AudioWave]) is not None:  # noqa: E501
-                    return Block([Line([params[1]])])
-                else:
-                    return Block([Line([params[3]])])
-            case _:
-                raise ValueError("Number of parameters is incorrect for 'if'. It must have 2 or 4 parameters.")  # noqa: E501
+        while True:
+            if expect(scope, params.pop(0), [None, str, LiretaString, AudioWave]) is not None:  # noqa: E501
+                return Block([Line([params.pop(0)])])
+            else:
+                _ = params.pop(0)
+            match str(expect(scope, params.pop(0), [str, LiretaString])):  # pyright: ignore[reportAny]
+                case "else":
+                    return Block([Line([params.pop(0)])])
+                case "elif":
+                    if expect(scope, params.pop(0), [None, str, LiretaString, AudioWave]) is not None:
+                        return Block([Line([params.pop(0)])])
+                    else:
+                        _ = params.pop(0)
+                case _:
+                    raise ValueError("Expected token 'else' or 'elif'.")
 
 
 class KWcompare(Keyword):  # noqa: D101
