@@ -401,7 +401,7 @@ var x = {op {var x;} - 1;};
 while {...} {...};
 ```
 
-Continues to execute the second block if the first evaluates to a non-null value.
+Continues to execute the second block if the first evaluates to a non-null value. Does **NOT** return anything.
 
 ### Examples
 
@@ -423,6 +423,7 @@ strop slice a i j; # 2
 strop find a b; # 3
 strop replace a b c; # 4
 strop strip a; # 5
+strop size a; # 6
 ```
 
 Collective for string operations.
@@ -432,6 +433,7 @@ Collective for string operations.
 (3) Returns the index of `b` as a substring of `a`, null if it isn't a substring.
 (4) Replaces all occurences of `b` into `c` inside `a`.
 (5) Removes trailing whitespace of a string.
+(6) Returns the size (length) of the string `a`.
 
 ### Examples
 
