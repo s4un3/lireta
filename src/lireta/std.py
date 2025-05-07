@@ -454,19 +454,19 @@ class KWoperation(Keyword):  # noqa: D101
                             expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
                         b = int(to_flt(str(
                             expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        return str(a & b)
+                        return str(float(a & b))
                     case "|":
                         a = int(to_flt(str(
                             expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
                         b = int(to_flt(str(
                             expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        return str(a | b)
+                        return str(float(a | b))
                     case "^":
                         a = int(to_flt(str(
                             expect(scope, params[0], [str, LiretaString]))))  # pyright: ignore[reportAny]
                         b = int(to_flt(str(
                             expect(scope, params[2], [str, LiretaString]))))  # pyright: ignore[reportAny]
-                        return str(a ^ b)
+                        return str(float(a ^ b))
                     case "and":
                         a = expect(scope, params[0], [str, LiretaString, None])  # pyright: ignore[reportAny]
                         b = expect(scope, params[2], [str, LiretaString, None])  # pyright: ignore[reportAny]
@@ -512,11 +512,11 @@ class KWoperation(Keyword):  # noqa: D101
                     case "<<":
                         a = a = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = int(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a << b)
+                        return str(float(a << b))
                     case ">>":
                         a = a = int(str(expect(scope, params[0], [str, LiretaString])))  # pyright: ignore[reportAny]
                         b = int(str(expect(scope, params[2], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(a << b)
+                        return str(float(a << b))
                     case _:
                         raise ValueError(f"Symbol '{symbol}' is invalid for operations between 2 values.")  # noqa: E501
             case 2:
@@ -537,7 +537,7 @@ class KWoperation(Keyword):  # noqa: D101
                         return str(np.log(a))  # pyright: ignore[reportAny]
                     case "~":
                         a = int(str(expect(scope, params[1], [str, LiretaString])))  # pyright: ignore[reportAny]
-                        return str(~a)
+                        return str(float(~a))
                     case _:
                         raise ValueError(f"Symbol '{symbol}' is invalid for operations on single values.")  # noqa: E501
             case _:
@@ -619,6 +619,14 @@ class KWstrop(Keyword):  # noqa: D101
                 a = str(expect(scope, params[1], [str, LiretaString]))  # pyright: ignore[reportAny]
                 return a.strip()
 
+            case "size":
+
+                if len(params) != 2:
+                    raise ValueError("Number of parameters is incorrect for 'strop size'.")  # noqa: E501
+
+                return str(float(len(str(
+                    expect(scope, params[1], [str, LiretaString])  # pyright: ignore[reportAny]
+                ))))
             case _:
                 raise ValueError(f"Invalid operation for 'strop': '{v}'")
 
